@@ -4,7 +4,7 @@ A script that allows you to customise Bliish Lite however you like.
 It’s lightweight and doesn’t use up much system resources, so you can add plenty of customisations without slowing down your PC.
 
 ## Installation
-1. Install [VioletMonkey](https://violentmonkey.github.io/).
+1. Install [ViolentMonkey](https://violentmonkey.github.io/).
 2. Install [Design Tool](https://greasyfork.org/en/scripts/576876-bliish-lite-design-tool).
 3. Done! Customise to your heart’s content!
 
