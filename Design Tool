@@ -1,0 +1,386 @@
+// ==UserScript==
+// @name          Bliish Lite Design Tool
+// @namespace     Violentmonkey Scripts
+// @match         https://bliish.com/lite*
+// @grant         GM_setValue
+// @grant         GM_getValue
+// @version       1.2
+// @author        smoochie
+// @description   Design Tool for Bliish Lite with Custom Background, Music, Fonts.
+// @license       MIT
+// ==/UserScript==
+ 
+(function() {
+    'use strict';
+ 
+    const clearDuplicates = () => {
+        ['design-menu-box', 'toggle-btn', 'custom-styles'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+    };
+    clearDuplicates();
+ 
+    const i18n = {
+        uk: { flag: "🇺🇦", title: "Дизайн", bg: "ФОН (URL):", bgColor: "КОЛІР ФОНУ:", useGradient: "Градієнт", gradient: "ДРУГИЙ КОЛІР:", resetBg: "Прибрати зображення", file: "🖼️ Локальне зображення", browse: "Огляд", opacity: "ЗАТЕМНЕННЯ:", radius: "ОКРУГЛЕННЯ:", text: "ТЕКСТ:", accent: "АКЦЕНТ:", music: "МУЗИКА (Файл/URL):", vol: "ГУЧНІСТЬ:", placeholder: "Пряме посилання на mp3...", loading: "⌛ Завантаження...", playing: "▶️ Грає", paused: "⏸ На паузі", localMusic: "🎵 Локальний файл", font: "ШРИФТ:", customFont: "Свій шрифт (Google Fonts):", customFontPlaceholder: "Напр.: Nunito, Lobster...", findFont: "Знайди шрифт на", exportTheme: "📥 Експорт", importTheme: "📤 Імпорт", musicStatus: "МУЗИКА:" },
+        en: { flag: "🇺🇸", title: "Design", bg: "BG (URL):", bgColor: "BG COLOR:", useGradient: "Gradient", gradient: "SECOND COLOR:", resetBg: "Remove Image", file: "🖼️ Local image", browse: "Browse", opacity: "OPACITY:", radius: "ROUNDING:", text: "TEXT:", accent: "ACCENT:", music: "MUSIC (File/URL):", vol: "VOLUME:", placeholder: "Direct mp3 link...", loading: "⌛ Loading...", playing: "▶️ Playing", paused: "⏸ Paused", localMusic: "🎵 Local File", font: "FONT:", customFont: "Custom font (Google Fonts):", customFontPlaceholder: "E.g.: Nunito, Lobster...", findFont: "Find font on", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "MUSIC:" },
+        pl: { flag: "🇵🇱", title: "Projekt", bg: "TŁO (URL):", bgColor: "KOLOR TŁA:", useGradient: "Gradient", gradient: "DRUGI KOLOR:", resetBg: "Usuń obraz", file: "🖼️ Lokalny obraz", browse: "Przeglądaj", opacity: "KRYCIE:", radius: "ZAOKRĄGLENIE:", text: "TEKST:", accent: "AKCENT:", music: "MUZYKA:", vol: "GŁOŚNOŚĆ:", placeholder: "Link mp3...", loading: "⌛ Ładowanie...", playing: "▶️ Gra", paused: "⏸ Pauza", localMusic: "🎵 Plik lokalny", font: "CZCIONKA:", customFont: "Własna czcionka (Google Fonts):", customFontPlaceholder: "Np.: Nunito, Lobster...", findFont: "Znajdź czcionkę na", exportTheme: "📥 Eksport", importTheme: "📤 Import", musicStatus: "STATUS:" },
+        de: { flag: "🇩🇪", title: "Design", bg: "HINTERGRUND:", bgColor: "BG FARBE:", useGradient: "Verlauf", gradient: "ZWEITE FARBE:", resetBg: "Bild entfernen", file: "🖼️ Lokales Bild", browse: "Durchsuchen", opacity: "DECKKRAFT:", radius: "RADIUS:", text: "TEXT:", accent: "AKZENT:", music: "MUSIK:", vol: "VOLUME:", placeholder: "Link...", loading: "⌛ Laden...", playing: "▶️ Spielt", paused: "⏸ Pause", localMusic: "🎵 Lokale Datei", font: "SCHRIFT:", customFont: "Eigene Schrift (Google Fonts):", customFontPlaceholder: "z.B.: Nunito, Lobster...", findFont: "Schriftart finden auf", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
+        fr: { flag: "🇫🇷", title: "Design", bg: "FOND (URL):", bgColor: "COULEUR FOND:", useGradient: "Dégradé", gradient: "DEUXIÈME COUL.:", resetBg: "Supprimer l'image", file: "🖼️ Image locale", browse: "Parcourir", opacity: "OPACITÉ:", radius: "ARRONDI:", text: "TEXTE:", accent: "ACCENT:", music: "MUSIQUE:", vol: "VOLUME:", placeholder: "Lien mp3...", loading: "⌛ Chargement...", playing: "▶️ Lecture", paused: "⏸ Pause", localMusic: "🎵 Fichier local", font: "POLICE:", customFont: "Police perso (Google Fonts):", customFontPlaceholder: "Ex.: Nunito, Lobster...", findFont: "Trouver la police sur", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUT:" },
+        es: { flag: "🇪🇸", title: "Diseño", bg: "FONDO (URL):", bgColor: "COLOR FONDO:", useGradient: "Degradado", gradient: "SEGUNDO COLOR:", resetBg: "Quitar imagen", file: "🖼️ Imagen local", browse: "Examinar", opacity: "OPACIDAD:", radius: "REDONDEO:", text: "TEXTO:", accent: "ACENTO:", music: "MÚSICA:", vol: "VOLUMEN:", placeholder: "Enlace mp3...", loading: "⌛ Cargando...", playing: "▶️ Reproduciendo", paused: "⏸ Pausa", localMusic: "🎵 Archivo local", font: "FUENTE:", customFont: "Fuente propia (Google Fonts):", customFontPlaceholder: "Ej.: Nunito, Lobster...", findFont: "Buscar fuente en", exportTheme: "📥 Exportar", importTheme: "📤 Importar", musicStatus: "ESTADO:" },
+        it: { flag: "🇮🇹", title: "Design", bg: "SFONDO (URL):", bgColor: "COLORE SFONDO:", useGradient: "Sfumatura", gradient: "SECONDO COLORE:", resetBg: "Rimuovi immagine", file: "🖼️ Immagine locale", browse: "Sfoglia", opacity: "OPACITÀ:", radius: "ARROTOND:", text: "TESTO:", accent: "ACCENTO:", music: "MUSICA:", vol: "VOLUME:", placeholder: "Link mp3...", loading: "⌛ Caricamento...", playing: "▶️ In riproduzione", paused: "⏸ In pausa", localMusic: "🎵 File locale", font: "FONT:", customFont: "Font personalizzato (Google Fonts):", customFontPlaceholder: "Es.: Nunito, Lobster...", findFont: "Trova il font su", exportTheme: "📥 Esporta", importTheme: "📤 Importa", musicStatus: "STATO:" },
+        pt: { flag: "🇵🇹", title: "Design", bg: "FUNDO (URL):", bgColor: "COR FUNDO:", useGradient: "Gradiente", gradient: "SEGUNDA COR:", resetBg: "Remover imagem", file: "🖼️ Imagem local", browse: "Procurar", opacity: "OPACIDADE:", radius: "ARREDOND:", text: "TEXTO:", accent: "ACENTO:", music: "MÚSICA:", vol: "VOLUME:", placeholder: "Link mp3...", loading: "⌛ Carregando...", playing: "▶️ Tocando", paused: "⏸ Pausado", localMusic: "🎵 Archivo local", font: "FONTE:", customFont: "Fonte própria (Google Fonts):", customFontPlaceholder: "Ex.: Nunito, Lobster...", findFont: "Encontrar fonte em", exportTheme: "📥 Exportar", importTheme: "📤 Importar", musicStatus: "STATUS:" },
+        tr: { flag: "🇹🇷", title: "Tasarım", bg: "ARKA PLAN:", bgColor: "ARKAPLAN RENGİ:", useGradient: "Gradyan", gradient: "İKİNCİ RENK:", resetBg: "Resmi kaldır", file: "🖼️ Yerel resim", browse: "Göz at", opacity: "OPAKLIK:", radius: "YUVARLAMA:", text: "METİN:", accent: "VURGU:", music: "MÜZİK:", vol: "SES:", placeholder: "mp3 bağlantısı...", loading: "⌛ Yükleniyor...", playing: "▶️ Çalıyor", paused: "⏸ Duraklatıldı", localMusic: "🎵 Yerel Dosya", font: "YAZI TİPİ:", customFont: "Özel yazı tipi (Google Fonts):", customFontPlaceholder: "Örn.: Nunito, Lobster...", findFont: "Şurada bul", exportTheme: "📥 Dışa Aktar", importTheme: "📤 Іçe Aktar", musicStatus: "DURUM:" },
+        nl: { flag: "🇳🇱", title: "Ontwerp", bg: "ACHTERGROND:", bgColor: "KLEUR:", useGradient: "Gradiënt", gradient: "TWEEDE KLEUR:", resetBg: "Verwijderen", file: "🖼️ Lokale afbeelding", browse: "Bladeren", opacity: "DEKKRACHT:", radius: "RONDING:", text: "TEKST:", accent: "ACCENT:", music: "MUZIEK:", vol: "VOLUME:", placeholder: "mp3 link...", loading: "⌛ Laden...", playing: "▶️ Speelt", paused: "⏸ Gepauzeerd", localMusic: "🎵 Lokaal bestand", font: "LETTERTYPE:", customFont: "Eigen lettertype (Google Fonts):", customFontPlaceholder: "Bijv.: Nunito, Lobster...", findFont: "Vind lettertype op", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
+        sv: { flag: "🇸🇪", title: "Design", bg: "BAKGRUND:", bgColor: "FÄRG:", useGradient: "Gradient", gradient: "ANDRA FÄRG:", resetBg: "Ta bort bild", file: "🖼️ Lokal bild", browse: "Bläddra", opacity: "OPACITET:", radius: "AVRUNDN:", text: "TEXT:", accent: "ACCENT:", music: "MUSIK:", vol: "VOLYM:", placeholder: "Länk...", loading: "⌛ Laddar...", playing: "▶️ Spelar", paused: "⏸ Pausad", localMusic: "🎵 Lokal fil", font: "TYPSNITT:", customFont: "Eget typsnitt (Google Fonts):", customFontPlaceholder: "T.ex.: Nunito, Lobster...", findFont: "Hitta typsnitt på", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
+        cs: { flag: "🇨🇿", title: "Design", bg: "POZADÍ:", bgColor: "BARVA:", useGradient: "Gradient", gradient: "DRUHÁ BARVA:", resetBg: "Odstranit", file: "🖼️ Lokální obrázek", browse: "Procházet", opacity: "PRŮHLEDNOST:", radius: "ZAOBLENÍ:", text: "TEXT:", accent: "AKCENT:", music: "HUDBA:", vol: "HLASITOST:", placeholder: "Odkaz mp3...", loading: "⌛ Načítání...", playing: "▶️ Hraje", paused: "⏸ Pozastaveno", localMusic: "🎵 Lokální soubor", font: "PÍSMO:", customFont: "Vlastní písmo (Google Fonts):", customFontPlaceholder: "Např.: Nunito, Lobster...", findFont: "Najít písmo na", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
+        el: { flag: "🇬🇷", title: "Σχέδιο", bg: "ΦΟΝΤΟ:", bgColor: "ΧΡΩΜΑ:", useGradient: "Διαβάθμιση", gradient: "ΔΕΥΤΕΡΟ ΧΡΩΜΑ:", resetBg: "Αφαίρεση", file: "🖼️ Τοπική εικόνα", browse: "Αναζήτηση", opacity: "ΔΙΑΦΑΝΕΙΑ:", radius: "ΣΤΡΟΓΓΥΛΕΜΑ:", text: "ΚΕΙΜΕΝΟ:", accent: "ΤΟΝΟΣ:", music: "ΜΟΥΣΙΚΗ:", vol: "ΕΝΤΑΣΗ:", placeholder: "Σύνδεσμος mp3...", loading: "⌛ Φόρτωση...", playing: "▶️ Παίζει", paused: "⏸ Παύση", localMusic: "🎵 Τοπικό αρχείο", font: "ΓΡΑΜΜΑΤΟΣΕΙΡΑ:", customFont: "Προσαρμ. γραμματοσειρά (Google Fonts):", customFontPlaceholder: "Π.χ.: Nunito, Lobster...", findFont: "Βρείτε τη γραμματοσειρά στο", exportTheme: "📥 Εξαγωγή", importTheme: "📤 Εισαγωγή", musicStatus: "ΚΑΤΑΣΤΑΣΗ:" },
+        ja: { flag: "🇯🇵", title: "デザイン", bg: "背景 (URL):", bgColor: "背景色:", useGradient: "グラデーション", gradient: "二番目の色:", resetBg: "画像を削除", file: "🖼️ ローカル画像", browse: "参照", opacity: "不透明度:", radius: "角の丸み:", text: "テキスト:", accent: "アクセント:", music: "音楽:", vol: "音量:", placeholder: "直リンク...", loading: "⌛ 読み込み中...", playing: "▶️ 再生中", paused: "⏸ 一時停止", localMusic: "🎵 ローカルファイル", font: "フォント:", customFont: "カスタムフォント (Google Fonts):", customFontPlaceholder: "例: Nunito, Lobster...", findFont: "フォントを検索", exportTheme: "📥 出力", importTheme: "📤 入力", musicStatus: "状態:" },
+        zh: { flag: "🇨🇳", title: "设计", bg: "背景 (URL):", bgColor: "背景颜色:", useGradient: "渐变", gradient: "第二颜色:", resetBg: "移除图片", file: "🖼️ 本地图像", browse: "浏览", opacity: "透明度:", radius: "圆角:", text: "文本:", accent: "强调色:", music: "音乐:", vol: "音量:", placeholder: "链接...", loading: "⌛ 加载中...", playing: "▶️ 播放中", paused: "⏸ 已暂停", localMusic: "🎵 本地文件", font: "字体:", customFont: "自定义字体 (Google Fonts):", customFontPlaceholder: "例如: Nunito, Lobster...", findFont: "找到字体", exportTheme: "📥 导出", importTheme: "📤 导入", musicStatus: "状态:" },
+        ko: { flag: "🇰🇷", title: "디자인", bg: "배경 (URL):", bgColor: "배경색:", useGradient: "그라데이션", gradient: "두 번째 색상:", resetBg: "이미지 제거", file: "🖼️ 로컬 이미지", browse: "찾기", opacity: "불투명도:", radius: "둥글기:", text: "텍스트:", accent: "강조색:", music: "음악:", vol: "볼륨:", placeholder: "링크...", loading: "⌛ 로딩 중...", playing: "▶️ 재생 중", paused: "⏸ 일시 중지", localMusic: "🎵 로컬 파일", font: "폰트:", customFont: "커스텀 폰트 (Google Fonts):", customFontPlaceholder: "예: Nunito, Lobster...", findFont: "글꼴 찾기", exportTheme: "📥 내보내기", importTheme: "📤 가져오기", musicStatus: "상태:" },
+        th: { flag: "🇹🇭", title: "การออกแบบ", bg: "พื้นหลัง (URL):", bgColor: "สีพื้นหลัง:", useGradient: "ไล่เฉดสี", gradient: "สีที่สอง:", resetBg: "ลบรูปภาพ", file: "🖼️ รูปภาพในเครื่อง", browse: "เลือกไฟล์", opacity: "ความโปร่งแสง:", radius: "ความมน:", text: "ข้อความ:", accent: "สีเน้น:", music: "เพลง:", vol: "ระดับเสียง:", placeholder: "ลิงก์...", loading: "⌛ กำลังโหลด...", playing: "▶️ กำลังเล่น", paused: "⏸ หยุดชั่วคราว", localMusic: "🎵 ไฟล์ในเครื่อง", font: "แบบอักษร:", customFont: "แบบอักษรเอง (Google Fonts):", customFontPlaceholder: "เช่น: Nunito, Lobster...", findFont: "ค้นหาแบบอักษรได้ที่", exportTheme: "📥 ส่งออก", importTheme: "📤 นำเข้า", musicStatus: "สถานะ:" },
+        vi: { flag: "🇻🇳", title: "Thiết kế", bg: "NỀN (URL):", bgColor: "MÀU NỀN:", useGradient: "Chuyển màu", gradient: "MÀU THỨ HAI:", resetBg: "Xóa ảnh", file: "🖼️ Ảnh cục bộ", browse: "Duyệt tệp", opacity: "ĐỘ MỜ:", radius: "BO GÓC:", text: "VĂN BẢN:", accent: "MÀU NHẤN:", music: "NHẠC:", vol: "ÂM LƯỢNG:", placeholder: "Link mp3...", loading: "⌛ Đang tải...", playing: "▶️ Đang phát", paused: "⏸ Đang tạm dừng", localMusic: "🎵 Tệp cục bộ", font: "PHÔNG CHỮ:", customFont: "Phông tùy chỉnh (Google Fonts):", customFontPlaceholder: "VD: Nunito, Lobster...", findFont: "Tìm phông chữ tại", exportTheme: "📥 Xuất", importTheme: "📤 Nhập", musicStatus: "TRẠNG THÁI:" },
+        ar: { flag: "🇸🇦", title: "تصميم", bg: "الخلفية:", bgColor: "لون الخلفية:", useGradient: "تدرج", gradient: "اللون الثاني:", resetBg: "إزالة الصورة", file: "🖼️ صورة محلية", browse: "تصفح", opacity: "الشفافية:", radius: "الاستدارة:", text: "النص:", accent: "اللون:", music: "موسيقى:", vol: "الصوت:", placeholder: "رابط mp3...", loading: "⌛ جاري التحميل...", playing: "▶️ يعمل", paused: "⏸ متوقف", localMusic: "🎵 ملف محلي", font: "الخط:", customFont: "خط مخصص (Google Fonts):", customFontPlaceholder: "مثال: Nunito, Lobster...", findFont: "ابحث عن الخط في", exportTheme: "📥 تصدير", importTheme: "📤 استيراد", musicStatus: "الحالة:" }
+    };
+ 
+    const fontList = ["Default", "Roboto", "Montserrat", "Open Sans", "Playfair Display", "Oswald", "Pacifico", "Caveat", "Kelly Slab"];
+ 
+    let userLang = GM_getValue('lang', navigator.language.slice(0, 2));
+    if (!i18n[userLang]) userLang = 'uk';
+ 
+    let config = {
+        bg: GM_getValue('bg', ''),
+        bgColor: GM_getValue('bgColor', '#121212'),
+        bgGradient: GM_getValue('bgGradient', '#121212'),
+        useGradient: GM_getValue('useGradient', false),
+        music: GM_getValue('music', ''),
+        textColor: GM_getValue('textColor', '#ffffff'),
+        accentColor: GM_getValue('accentColor', '#6366f1'),
+        bgOpacity: GM_getValue('bgOpacity', 0.5),
+        volume: GM_getValue('musicVolume', 0.5),
+        radius: GM_getValue('customRadius', 0),
+        font: GM_getValue('font', 'Default'),
+        customFont: GM_getValue('customFont', ''),
+        menuDark: GM_getValue('menuDark', false)
+    };
+ 
+    const menuTheme = () => config.menuDark
+        ? { bg: '#1e1e2e', surface: '#181825', border: '#313244', text: '#cdd6f4', subtext: '#a6adc8', inputBg: '#313244', inputBorder: '#45475a', btnBg: '#313244', btnHover: '#45475a', footerBg: '#181825' }
+        : { bg: '#ffffff', surface: '#fafafa', border: '#e0e0e0', text: '#333333', subtext: '#777777', inputBg: '#ffffff', inputBorder: '#cccccc', btnBg: '#f0f0f0', btnHover: '#e4e4e4', footerBg: '#fafafa' };
+ 
+    const applyStyles = () => {
+        let styleTag = document.getElementById('custom-styles') || document.createElement('style');
+        styleTag.id = 'custom-styles';
+        document.head.appendChild(styleTag);
+ 
+        const activeFont = config.customFont || (config.font !== 'Default' ? config.font : '');
+        const fontImport = activeFont ? `@import url('https://fonts.googleapis.com/css2?family=${activeFont.replace(/ /g, '+')}&display=swap');` : '';
+        const fontFamily = activeFont ? `font-family: '${activeFont}', sans-serif !important;` : '';
+ 
+        let backgroundStyle = `background-color: ${config.bgColor} !important;`;
+        if (config.bg && config.bg.trim() !== '') {
+            backgroundStyle = `background: url('${config.bg}') no-repeat center center fixed !important; background-size: cover !important;`;
+        } else if (config.useGradient) {
+            backgroundStyle = `background: linear-gradient(135deg, ${config.bgColor}, ${config.bgGradient}) fixed !important;`;
+        }
+ 
+        const t = menuTheme();
+        const r = Number(config.radius);
+ 
+        styleTag.innerHTML = `
+            ${fontImport}
+            .lite-theme-swatch, .lite-theme-label, .lite-themes, center span[onclick*="setTheme"], .lite-actions a[href*="accent="] { display: none !important; }
+            body { ${backgroundStyle} color: ${config.textColor} !important; ${fontFamily} min-height: 100vh; }
+            body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, ${config.bgOpacity}); z-index: -1; pointer-events: none; }
+            h1, h2, h3, h4, h5, p, li, .lite-text, .lite-comment-body, .lite-author, .lite-brand-highlight { color: ${config.textColor} !important; ${fontFamily} }
+ 
+ 
+            .lite-brand-highlight, .lite-brand {
+            background-color: ${config.accentColor} !important;
+            color: #ffffff !important;
+            display: inline-block;
+        }
+            .brand, .brand-name, [class*="brand"] svg, [class*="brand"] path {
+            color: ${config.accentColor} !important;
+            fill: ${config.accentColor} !important;
+        }
+ 
+            .lite-button, button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn) { background-color: ${config.accentColor} !important; color: #fff !important; border: none !important; }
+            .lite-filter-row, .lite-post + .lite-post, .lite-comments-separator, .lite-comment-preview-separator, .lite-pagination, .lite-footer, .lite-composer textarea, .lite-wall-header, .lite-mention { border-color: ${config.accentColor} !important; }
+            a, .lite-author, .lite-comment-author, .lite-liked-icon { color: ${config.accentColor} !important; }
+ 
+            /* FIX 1: border-radius applied to page elements (menu excluded here — handled separately below) */
+            .lite-brand-highlight, .lite-button, button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn),
+            .lite-post, .lite-comment, .ui-input, .lite-composer, .lite-input, iframe, input,
+            .lite-post-composer textarea { border-radius: ${r}px !important; }
+ 
+ 
+            #toggle-btn {
+                position: fixed; top: 15px; right: 15px; z-index: 10001;
+                width: 48px; height: 48px; border: none; cursor: pointer;
+                background: ${config.accentColor}; color: white; font-size: 22px;
+                border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: 0.2s;
+            }
+            #toggle-btn:hover { transform: scale(1.05); }
+ 
+ 
+            #design-menu-box {
+                position: fixed; top: 60px; right: 20px; z-index: 10000;
+                width: 330px; max-width: calc(100vw - 40px); max-height: calc(100vh - 80px);
+                display: flex; flex-direction: column;
+                box-shadow: 0 15px 45px rgba(0,0,0,0.4);
+                font-family: 'Segoe UI', Tahoma, sans-serif;
+                border-radius: ${r}px !important;   /* ← radius applied */
+                overflow: hidden;                    /* ← clips children to rounded corners */
+                border: 1px solid ${t.border};
+                background: ${t.bg};
+            }
+ 
+ 
+            #design-menu-box * { color: ${t.text} !important; text-shadow: none !important; box-sizing: border-box; }
+            #menu-header {
+                padding: 15px; border-bottom: 1px solid ${t.border};
+                display: flex; justify-content: space-between; align-items: center;
+                background: ${t.surface}; flex-shrink: 0;
+            }
+            #menu-scroll-body { overflow-y: auto; padding: 15px; flex-grow: 1; scrollbar-width: thin; background: ${t.bg}; }
+            #menu-footer { padding: 15px; border-top: 1px solid ${t.border}; background: ${t.surface}; flex-shrink: 0; }
+ 
+            .ui-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end; }
+            .ui-col { flex: 1; }
+            .ui-label { display: block; font-size: 11px; font-weight: 800; margin-bottom: 4px; color: ${t.subtext} !important; text-transform: uppercase; letter-spacing: 0.5px; }
+            .ui-input { width: 100%; padding: 8px; border: 1px solid ${t.inputBorder}; font-size: 13px; background: ${t.inputBg} !important; color: ${t.text} !important; outline: none; border-radius: 4px; }
+            .ui-btn { padding: 8px; border: 1px solid ${t.border}; background: ${t.btnBg} !important; color: ${t.text} !important; cursor: pointer; font-size: 11px; font-weight: 600; text-align: center; border-radius: 4px; }
+            .ui-btn:hover { background: ${t.btnHover} !important; }
+ 
+            #lang-select { font-size: 12px; border: 1px solid ${t.border}; padding: 3px 6px; border-radius: 4px; background: ${t.inputBg} !important; color: ${t.text} !important; max-width: 120px; }
+            #font-select { background: ${t.inputBg} !important; color: ${t.text} !important; }
+ 
+            #save-btn { width: 75%; height: 40px; background: ${config.accentColor} !important; color: #fff !important; border: none; font-weight: bold; cursor: pointer; font-size: 14px; border-radius: 6px; }
+            #stop-btn { width: 22%; height: 40px; background: ${config.menuDark ? '#45475a' : '#333'} !important; color: #fff !important; border: none; cursor: pointer; font-size: 16px; border-radius: 6px; }
+            #theme-toggle-btn { background: ${t.btnBg} !important; color: ${t.text} !important; border: 1px solid ${t.border}; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+            #theme-toggle-btn:hover { background: ${t.btnHover} !important; }
+ 
+            #music-status-text { font-weight: 600; }
+            #design-menu-box input[type="range"] { accent-color: ${config.accentColor}; }
+        `;
+    };
+ 
+    const updateMusicStatus = () => {
+        const el = document.getElementById('music-status-text');
+        if (!el || !window.audioPl) return;
+        const cur = i18n[userLang];
+        el.textContent = window.audioPl.paused ? cur.paused : cur.playing;
+        el.style.color = window.audioPl.paused ? '#e74c3c' : '#27ae60';
+    };
+ 
+    const renderMenuContent = (langCode) => {
+        const cur = i18n[langCode];
+        const isCustomFont = !!config.customFont;
+ 
+        menu.innerHTML = `
+            <div id="menu-header">
+                <span style="font-weight:bold; font-size:16px;">${cur.title}</span>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <!-- FIX 3: dark/light toggle button -->
+                    <button id="theme-toggle-btn" title="Toggle menu theme">${config.menuDark ? '☀️' : '🌙'}</button>
+                    <select id="lang-select">
+                        ${Object.keys(i18n).map(k => `<option value="${k}" ${langCode===k?'selected':''}>${i18n[k].flag} ${k.toUpperCase()}</option>`).join('')}
+                    </select>
+                </div>
+            </div>
+            <div id="menu-scroll-body">
+                <label class="ui-label">${cur.font}</label>
+                <select id="font-select" class="ui-input" style="margin-bottom:8px;">
+                    ${fontList.map(f => `<option value="${f}" ${(!isCustomFont && config.font===f)?'selected':''}>${f}</option>`).join('')}
+                    <option value="__custom__" ${isCustomFont?'selected':''}>✏️ ${cur.customFont.split('(')[0].trim()}</option>
+                </select>
+                <div id="custom-font-wrap" style="display:${isCustomFont ? 'block' : 'none'}; margin-top:6px;">
+                <input type="text" id="custom-font-input" class="ui-input" placeholder="${cur.customFontPlaceholder}" value="${config.customFont || ''}">
+                <div style="margin-top:4px; font-size:10px; color:#888 !important; line-height: 1.2;">
+                  ${cur.findFont} <a href="https://fonts.google.com" target="_blank" style="color: #0077ff !important; text-decoration: underline;">Google Fonts</a>
+                </div>
+                </div>
+ 
+                <label class="ui-label">${cur.bg}</label>
+                <input type="text" id="bg-input" class="ui-input" value="${config.bg.startsWith('data') ? cur.file : config.bg}">
+                <div class="ui-row" style="margin-top:6px;">
+                    <button id="bg-browse-btn" class="ui-btn ui-col">${cur.browse}</button>
+                    <button id="bg-reset-btn" class="ui-btn ui-col" style="color:#e74c3c !important; border-color:#fadbd8 !important;">${cur.resetBg}</button>
+                </div>
+                <input type="file" id="bg-file" accept="image/*" style="display:none">
+ 
+                <div class="ui-row" style="margin-top:10px;">
+                    <div class="ui-col">
+                        <label class="ui-label">${cur.bgColor}</label>
+                        <input type="color" id="bg-color-picker" value="${config.bgColor}" style="width:100%; height:34px; border:none; cursor:pointer; background:none;">
+                    </div>
+                    <div class="ui-col" id="gradient-col" style="display:${config.useGradient ? 'block' : 'none'};">
+                        <label class="ui-label">${cur.gradient}</label>
+                        <input type="color" id="bg-gradient-picker" value="${config.bgGradient}" style="width:100%; height:34px; border:none; cursor:pointer; background:none;">
+                    </div>
+                </div>
+ 
+                <label style="display:flex; align-items:center; gap:10px; margin: 10px 0; font-size:13px; cursor:pointer; font-weight:600;">
+                    <input type="checkbox" id="gradient-toggle" ${config.useGradient ? 'checked' : ''} style="width:16px; height:16px;"> ${cur.useGradient}
+                </label>
+ 
+                <div class="ui-row">
+                    <div class="ui-col">
+                        <label class="ui-label">${cur.opacity}</label>
+                        <input type="range" id="opacity-input" min="0" max="1" step="0.05" value="${config.bgOpacity}" style="width:100%;">
+                    </div>
+                    <div class="ui-col">
+                        <label class="ui-label">${cur.radius}</label>
+                        <input type="range" id="radius-input" min="0" max="40" value="${config.radius}" style="width:100%;">
+                    </div>
+                </div>
+ 
+                <div class="ui-row">
+                    <div class="ui-col"><label class="ui-label">${cur.text}</label><input type="color" id="color-picker" value="${config.textColor}" style="width:100%; height:34px; border:none; background:none;"></div>
+                    <div class="ui-col"><label class="ui-label">${cur.accent}</label><input type="color" id="accent-picker" value="${config.accentColor}" style="width:100%; height:34px; border:none; background:none;"></div>
+                </div>
+ 
+                <label class="ui-label">${cur.music}</label>
+                <input type="text" id="music-input" class="ui-input" value="${config.music.startsWith('data') ? cur.localMusic : config.music}">
+                <button id="music-browse-btn" class="ui-btn" style="width:100%; margin-top:6px;">${cur.browse}</button>
+                <input type="file" id="music-file" accept="audio/*" style="display:none">
+ 
+                <label class="ui-label" style="margin-top:12px;">${cur.vol}</label>
+                <input type="range" id="volume-input" min="0" max="100" value="${config.volume * 100}" style="width:100%;">
+ 
+                <div style="margin-top:12px; font-size:12px; border-top:1px solid #eee; padding-top:8px;">
+                   <strong>${cur.musicStatus}</strong> <span id="music-status-text">—</span>
+                </div>
+            </div>
+            <div id="menu-footer">
+                <div class="ui-row" style="margin-bottom:10px;">
+                    <button id="export-btn" class="ui-btn ui-col">${cur.exportTheme}</button>
+                    <button id="import-btn" class="ui-btn ui-col">${cur.importTheme}</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <button id="save-btn">SAVE & APPLY</button>
+                    <button id="stop-btn">⏯</button>
+                </div>
+                <input type="file" id="import-file" accept=".json" style="display:none">
+            </div>
+        `;
+        attachEvents(langCode);
+        updateMusicStatus();
+    };
+ 
+    const attachEvents = (langCode) => {
+        const cur = i18n[langCode];
+ 
+        document.getElementById('lang-select').onchange = (e) => {
+            userLang = e.target.value; GM_setValue('lang', userLang); renderMenuContent(userLang);
+        };
+ 
+ 
+        document.getElementById('theme-toggle-btn').onclick = () => {
+            config.menuDark = !config.menuDark;
+            GM_setValue('menuDark', config.menuDark);
+            applyStyles();
+            renderMenuContent(userLang);
+        };
+ 
+        document.getElementById('gradient-toggle').onchange = (e) => {
+            config.useGradient = e.target.checked;
+            document.getElementById('gradient-col').style.display = config.useGradient ? 'block' : 'none';
+            applyStyles();
+        };
+ 
+        document.getElementById('font-select').onchange = (e) => {
+            const val = e.target.value;
+            document.getElementById('custom-font-wrap').style.display = (val === '__custom__') ? 'block' : 'none';
+            if (val !== '__custom__') { config.customFont = ''; config.font = val; applyStyles(); }
+        };
+ 
+        document.getElementById('custom-font-input').oninput = (e) => { config.customFont = e.target.value; applyStyles(); };
+        document.getElementById('bg-color-picker').oninput = (e) => { config.bgColor = e.target.value; applyStyles(); };
+        document.getElementById('bg-gradient-picker').oninput = (e) => { config.bgGradient = e.target.value; applyStyles(); };
+        document.getElementById('opacity-input').oninput = (e) => { config.bgOpacity = e.target.value; applyStyles(); };
+        document.getElementById('radius-input').oninput = (e) => { config.radius = e.target.value; applyStyles(); };
+        document.getElementById('color-picker').oninput = (e) => { config.textColor = e.target.value; applyStyles(); };
+        document.getElementById('accent-picker').oninput = (e) => { config.accentColor = e.target.value; applyStyles(); };
+ 
+        document.getElementById('bg-reset-btn').onclick = () => { config.bg = ''; document.getElementById('bg-input').value = ''; applyStyles(); };
+ 
+        document.getElementById('bg-browse-btn').onclick = () => document.getElementById('bg-file').click();
+        document.getElementById('bg-file').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => { config.bg = ev.target.result; document.getElementById('bg-input').value = cur.file; applyStyles(); };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+ 
+        document.getElementById('music-browse-btn').onclick = () => document.getElementById('music-file').click();
+        document.getElementById('music-file').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => { config.music = ev.target.result; document.getElementById('music-input').value = cur.localMusic; };
+            reader.readAsDataURL(e.target.files[0]);
+        };
+ 
+        document.getElementById('volume-input').oninput = (e) => {
+            config.volume = e.target.value / 100;
+            if (window.audioPl) window.audioPl.volume = config.volume;
+        };
+ 
+        document.getElementById('stop-btn').onclick = () => {
+            if (window.audioPl) { window.audioPl.paused ? window.audioPl.play().catch(()=>{}) : window.audioPl.pause(); setTimeout(updateMusicStatus, 100); }
+        };
+ 
+        document.getElementById('export-btn').onclick = () => {
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bliish-theme.json'; a.click();
+        };
+ 
+        document.getElementById('import-btn').onclick = () => document.getElementById('import-file').click();
+        document.getElementById('import-file').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    Object.assign(config, imported);
+                    GM_setValue('bg', config.bg); GM_setValue('bgColor', config.bgColor); GM_setValue('bgGradient', config.bgGradient);
+                    GM_setValue('useGradient', config.useGradient); GM_setValue('textColor', config.textColor); GM_setValue('accentColor', config.accentColor);
+                    GM_setValue('bgOpacity', config.bgOpacity); GM_setValue('customRadius', config.radius); GM_setValue('musicVolume', config.volume);
+                    GM_setValue('font', config.font); GM_setValue('customFont', config.customFont); GM_setValue('music', config.music);
+                    GM_setValue('menuDark', config.menuDark);
+                    location.reload();
+                } catch(err) { alert('Import error'); }
+            };
+            reader.readAsText(e.target.files[0]);
+        };
+ 
+        document.getElementById('save-btn').onclick = () => {
+            const bgVal = document.getElementById('bg-input').value;
+            GM_setValue('bg', bgVal.includes('🖼️') ? config.bg : bgVal);
+            GM_setValue('bgColor', config.bgColor); GM_setValue('bgGradient', config.bgGradient); GM_setValue('useGradient', config.useGradient);
+            GM_setValue('textColor', config.textColor); GM_setValue('accentColor', config.accentColor); GM_setValue('bgOpacity', config.bgOpacity);
+            GM_setValue('customRadius', config.radius); GM_setValue('musicVolume', config.volume); GM_setValue('font', config.font); GM_setValue('customFont', config.customFont);
+            GM_setValue('menuDark', config.menuDark);
+            const musicVal = document.getElementById('music-input').value;
+            GM_setValue('music', musicVal.includes('🎵') ? config.music : musicVal);
+            location.reload();
+        };
+    };
+ 
+    const menu = document.createElement('div');
+    menu.id = 'design-menu-box';
+    document.body.appendChild(menu);
+    menu.style.display = 'none';
+ 
+    document.body.appendChild(Object.assign(document.createElement('button'), {
+        id: 'toggle-btn', innerHTML: '🎨',
+        onclick: () => menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'
+    }));
+ 
+    renderMenuContent(userLang);
+    applyStyles();
+ 
+    if (config.music) {
+        window.audioPl = new Audio(config.music); window.audioPl.loop = true; window.audioPl.volume = config.volume;
+        document.addEventListener('click', () => { if (window.audioPl.paused) window.audioPl.play().catch(()=>{}); }, { once: true });
+        setInterval(updateMusicStatus, 1000);
+    }
+})();
