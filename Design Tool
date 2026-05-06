@@ -109,7 +109,7 @@
             .lite-filter-row, .lite-post + .lite-post, .lite-comments-separator, .lite-comment-preview-separator, .lite-pagination, .lite-footer, .lite-composer textarea, .lite-wall-header, .lite-mention { border-color: ${config.accentColor} !important; }
             a, .lite-author, .lite-comment-author, .lite-liked-icon { color: ${config.accentColor} !important; }
  
-            /* FIX 1: border-radius applied to page elements (menu excluded here — handled separately below) */
+           
             .lite-brand-highlight, .lite-button, button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn),
             .lite-post, .lite-comment, .ui-input, .lite-composer, .lite-input, iframe, input,
             .lite-post-composer textarea { border-radius: ${r}px !important; }
@@ -130,8 +130,8 @@
                 display: flex; flex-direction: column;
                 box-shadow: 0 15px 45px rgba(0,0,0,0.4);
                 font-family: 'Segoe UI', Tahoma, sans-serif;
-                border-radius: ${r}px !important;   /* ← radius applied */
-                overflow: hidden;                    /* ← clips children to rounded corners */
+                border-radius: ${r}px !important;   
+                overflow: hidden;                    
                 border: 1px solid ${t.border};
                 background: ${t.bg};
             }
