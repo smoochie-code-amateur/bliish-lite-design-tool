@@ -4,9 +4,11 @@ A script that allows you to customise Bliish Lite however you like.
 It’s lightweight and doesn’t use up much system resources, so you can add plenty of customisations without slowing down your PC.
 
 ## Installation
-1. Install [ViolentMonkey](https://violentmonkey.github.io/).
+1. Install [ViolentMonkey](https://violentmonkey.github.io/) **or** [TamperMonkey](https://www.tampermonkey.net/).
 2. Install [Design Tool](https://greasyfork.org/en/scripts/576876-bliish-lite-design-tool).
 3. Done! Customise to your heart’s content!
+
+### PS: Visit this [page](https://greasyfork.org/en#:~:text=Step%201%3A%20install%20a%20user%20script%20manager), if you wanna find what kind of extension you can use in your system.
 
 ## Recommendations
 Be careful with the music; it *may* put a strain on the CPU on *really* old PCs. I can’t fix this yet, but I’ll look into whether it’s possible to do so.
