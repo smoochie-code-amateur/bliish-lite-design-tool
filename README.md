@@ -10,8 +10,14 @@ It’s lightweight and doesn’t use up much system resources, so you can add pl
 
 ### *PS: Visit this [page](https://greasyfork.org/en#:~:text=Step%201%3A%20install%20a%20user%20script%20manager), if you wanna find what kind of extension you can use in your system.
 
-## Recommendations
-Be careful with the music; it *may* put a strain on the CPU on *really* old PCs. I can’t fix this yet, but I’ll look into whether it’s possible to do so.
+## What can affect your CPU on old pcs
+- Music.
+- Effects/Filters.
+
+## Testing
+I test it on my old laptop, so i publish code **only** after testing.
+- Results *without* music and effects: 10-20% usage of CPU
+- Results *with* music and effects: 30-50% usage of CPU
 
 ## Feedback
 I’d love to hear it, of course! If possible, I’ll add or fix something if the need arises.
