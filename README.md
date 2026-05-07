@@ -16,13 +16,3 @@ I’d love to hear it, of course! If possible, I’ll add or fix something if th
 Feel free to fork this script and add your own touches. For now, this script has everything I need.
 
 ## Thanks for installing!
-
----
-### UPD Logs
-
-<details>
-<summary> <b> Version 1.4 </b> </summary>
-<br>
-  - Fixed the problem with URL for BG: now you can use any pic from the Web<br>
-  - Optimised code as much as possible, to run even faster.
-</details>
