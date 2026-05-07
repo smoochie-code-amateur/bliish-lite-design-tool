@@ -5,9 +5,9 @@
 // @grant         GM_setValue
 // @grant         GM_getValue
 // @grant         GM_xmlhttpRequest
-// @version       1.4
+// @version       1.5
 // @author        smoochie
-// @description   Design Tool for Bliish Lite with Custom Background, Music, Fonts.
+// @description   Design Tool for Bliish Lite: Custom BG, Music, Fonts, Screen Effects, Profile Editor, Symbol Themes.
 // @license       MIT
 // @downloadURL https://update.greasyfork.org/scripts/576876/Bliish%20Lite%20Design%20Tool.user.js
 // @updateURL https://update.greasyfork.org/scripts/576876/Bliish%20Lite%20Design%20Tool.meta.js
@@ -16,37 +16,806 @@
 (function () {
     'use strict';
 
-    // --- CLEANUP ---
-    ['design-menu-box', 'toggle-btn', 'custom-styles'].forEach(id => document.getElementById(id)?.remove());
+    // ─── CLEANUP ────────────────────────────────────────────────────────────────
+    ['design-menu-box','toggle-btn','custom-styles','fx-canvas','blood-overlay'].forEach(id => document.getElementById(id)?.remove());
+    if (window._bliishFxId) { cancelAnimationFrame(window._bliishFxId); window._bliishFxId = null; }
 
-    // --- I18N ---
-    const i18n = {
-        uk: { flag: "🇺🇦", title: "Дизайн", bg: "ФОН (URL):", bgColor: "КОЛІР ФОНУ:", useGradient: "Градієнт", gradient: "ДРУГИЙ КОЛІР:", resetBg: "Прибрати зображення", file: "🖼️ Локальне зображення", browse: "Огляд", opacity: "ЗАТЕМНЕННЯ:", radius: "ОКРУГЛЕННЯ:", text: "ТЕКСТ:", accent: "АКЦЕНТ:", music: "МУЗИКА (Файл/URL):", vol: "ГУЧНІСТЬ:", playing: "▶️ Грає", paused: "⏸ На паузі", localMusic: "🎵 Локальний файл", font: "ШРИФТ:", customFont: "Свій шрифт (Google Fonts):", customFontPlaceholder: "Напр.: Nunito, Lobster...", findFont: "Знайди шрифт на", exportTheme: "📥 Експорт", importTheme: "📤 Імпорт", musicStatus: "МУЗИКА:" },
-        en: { flag: "🇺🇸", title: "Design", bg: "BG (URL):", bgColor: "BG COLOR:", useGradient: "Gradient", gradient: "SECOND COLOR:", resetBg: "Remove Image", file: "🖼️ Local image", browse: "Browse", opacity: "OPACITY:", radius: "ROUNDING:", text: "TEXT:", accent: "ACCENT:", music: "MUSIC (File/URL):", vol: "VOLUME:", playing: "▶️ Playing", paused: "⏸ Paused", localMusic: "🎵 Local File", font: "FONT:", customFont: "Custom font (Google Fonts):", customFontPlaceholder: "E.g.: Nunito, Lobster...", findFont: "Find font on", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "MUSIC:" },
-        pl: { flag: "🇵🇱", title: "Projekt", bg: "TŁO (URL):", bgColor: "KOLOR TŁA:", useGradient: "Gradient", gradient: "DRUGI KOLOR:", resetBg: "Usuń obraz", file: "🖼️ Lokalny obraz", browse: "Przeglądaj", opacity: "KRYCIE:", radius: "ZAOKRĄGLENIE:", text: "TEKST:", accent: "AKCENT:", music: "MUZYKA:", vol: "GŁOŚNOŚĆ:", playing: "▶️ Gra", paused: "⏸ Pauza", localMusic: "🎵 Plik lokalny", font: "CZCIONKA:", customFont: "Własna czcionka (Google Fonts):", customFontPlaceholder: "Np.: Nunito, Lobster...", findFont: "Znajdź czcionkę na", exportTheme: "📥 Eksport", importTheme: "📤 Import", musicStatus: "STATUS:" },
-        de: { flag: "🇩🇪", title: "Design", bg: "HINTERGRUND:", bgColor: "BG FARBE:", useGradient: "Verlauf", gradient: "ZWEITE FARBE:", resetBg: "Bild entfernen", file: "🖼️ Lokales Bild", browse: "Durchsuchen", opacity: "DECKKRAFT:", radius: "RADIUS:", text: "TEXT:", accent: "AKZENT:", music: "MUSIK:", vol: "VOLUME:", playing: "▶️ Spielt", paused: "⏸ Pause", localMusic: "🎵 Lokale Datei", font: "SCHRIFT:", customFont: "Eigene Schrift (Google Fonts):", customFontPlaceholder: "z.B.: Nunito, Lobster...", findFont: "Schriftart finden auf", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
-        fr: { flag: "🇫🇷", title: "Design", bg: "FOND (URL):", bgColor: "COULEUR FOND:", useGradient: "Dégradé", gradient: "DEUXIÈME COUL.:", resetBg: "Supprimer l'image", file: "🖼️ Image locale", browse: "Parcourir", opacity: "OPACITÉ:", radius: "ARRONDI:", text: "TEXTE:", accent: "ACCENT:", music: "MUSIQUE:", vol: "VOLUME:", playing: "▶️ Lecture", paused: "⏸ Pause", localMusic: "🎵 Fichier local", font: "POLICE:", customFont: "Police perso (Google Fonts):", customFontPlaceholder: "Ex.: Nunito, Lobster...", findFont: "Trouver la police sur", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUT:" },
-        es: { flag: "🇪🇸", title: "Diseño", bg: "FONDO (URL):", bgColor: "COLOR FONDO:", useGradient: "Degradado", gradient: "SEGUNDO COLOR:", resetBg: "Quitar imagen", file: "🖼️ Imagen local", browse: "Examinar", opacity: "OPACIDAD:", radius: "REDONDEO:", text: "TEXTO:", accent: "ACENTO:", music: "MÚSICA:", vol: "VOLUMEN:", playing: "▶️ Reproduciendo", paused: "⏸ Pausa", localMusic: "🎵 Archivo local", font: "FUENTE:", customFont: "Fuente propia (Google Fonts):", customFontPlaceholder: "Ej.: Nunito, Lobster...", findFont: "Buscar fuente en", exportTheme: "📥 Exportar", importTheme: "📤 Importar", musicStatus: "ESTADO:" },
-        it: { flag: "🇮🇹", title: "Design", bg: "SFONDO (URL):", bgColor: "COLORE SFONDO:", useGradient: "Sfumatura", gradient: "SECONDO COLORE:", resetBg: "Rimuovi immagine", file: "🖼️ Immagine locale", browse: "Sfoglia", opacity: "OPACITÀ:", radius: "ARROTOND:", text: "TESTO:", accent: "ACCENTO:", music: "MUSICA:", vol: "VOLUME:", playing: "▶️ In riproduzione", paused: "⏸ In pausa", localMusic: "🎵 File locale", font: "FONT:", customFont: "Font personalizzato (Google Fonts):", customFontPlaceholder: "Es.: Nunito, Lobster...", findFont: "Trova il font su", exportTheme: "📥 Esporta", importTheme: "📤 Importa", musicStatus: "STATO:" },
-        pt: { flag: "🇵🇹", title: "Design", bg: "FUNDO (URL):", bgColor: "COR FUNDO:", useGradient: "Gradiente", gradient: "SEGUNDA COR:", resetBg: "Remover imagem", file: "🖼️ Imagem local", browse: "Procurar", opacity: "OPACIDADE:", radius: "ARREDOND:", text: "TEXTO:", accent: "ACENTO:", music: "MÚSICA:", vol: "VOLUME:", playing: "▶️ Tocando", paused: "⏸ Pausado", localMusic: "🎵 Archivo local", font: "FONTE:", customFont: "Fonte própria (Google Fonts):", customFontPlaceholder: "Ex.: Nunito, Lobster...", findFont: "Encontrar fonte em", exportTheme: "📥 Exportar", importTheme: "📤 Importar", musicStatus: "STATUS:" },
-        tr: { flag: "🇹🇷", title: "Tasarım", bg: "ARKA PLAN:", bgColor: "ARKAPLAN RENGİ:", useGradient: "Gradyan", gradient: "İKİNCİ RENK:", resetBg: "Resmi kaldır", file: "🖼️ Yerel resim", browse: "Göz at", opacity: "OPAKLIK:", radius: "YUVARLAMA:", text: "METİN:", accent: "VURGU:", music: "MÜZİK:", vol: "SES:", playing: "▶️ Çalıyor", paused: "⏸ Duraklatıldı", localMusic: "🎵 Yerel Dosya", font: "YAZI TİPİ:", customFont: "Özel yazı tipi (Google Fonts):", customFontPlaceholder: "Örn.: Nunito, Lobster...", findFont: "Şurada bul", exportTheme: "📥 Dışa Aktar", importTheme: "📤 Іçe Aktar", musicStatus: "DURUM:" },
-        nl: { flag: "🇳🇱", title: "Ontwerp", bg: "ACHTERGROND:", bgColor: "KLEUR:", useGradient: "Gradiënt", gradient: "TWEEDE KLEUR:", resetBg: "Verwijderen", file: "🖼️ Lokale afbeelding", browse: "Bladeren", opacity: "DEKKRACHT:", radius: "RONDING:", text: "TEKST:", accent: "ACCENT:", music: "MUZIEK:", vol: "VOLUME:", playing: "▶️ Speelt", paused: "⏸ Gepauzeerd", localMusic: "🎵 Lokaal bestand", font: "LETTERTYPE:", customFont: "Eigen lettertype (Google Fonts):", customFontPlaceholder: "Bijv.: Nunito, Lobster...", findFont: "Vind lettertype op", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
-        sv: { flag: "🇸🇪", title: "Design", bg: "BAKGRUND:", bgColor: "FÄRG:", useGradient: "Gradient", gradient: "ANDRA FÄRG:", resetBg: "Ta bort bild", file: "🖼️ Lokal bild", browse: "Bläddra", opacity: "OPACITET:", radius: "AVRUNDN:", text: "TEXT:", accent: "ACCENT:", music: "MUSIK:", vol: "VOLYM:", playing: "▶️ Spelar", paused: "⏸ Pausad", localMusic: "🎵 Lokal fil", font: "TYPSNITT:", customFont: "Eget typsnitt (Google Fonts):", customFontPlaceholder: "T.ex.: Nunito, Lobster...", findFont: "Hitta typsnitt på", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
-        cs: { flag: "🇨🇿", title: "Design", bg: "POZADÍ:", bgColor: "BARVA:", useGradient: "Gradient", gradient: "DRUHÁ BARVA:", resetBg: "Odstranit", file: "🖼️ Lokální obrázek", browse: "Procházet", opacity: "PRŮHLEDNOST:", radius: "ZAOBLENÍ:", text: "TEXT:", accent: "AKCENT:", music: "HUDBA:", vol: "HLASITOST:", playing: "▶️ Hraje", paused: "⏸ Pozastaveno", localMusic: "🎵 Lokální soubor", font: "PÍSMO:", customFont: "Vlastní písmo (Google Fonts):", customFontPlaceholder: "Např.: Nunito, Lobster...", findFont: "Najít písmo na", exportTheme: "📥 Export", importTheme: "📤 Import", musicStatus: "STATUS:" },
-        el: { flag: "🇬🇷", title: "Σχέδιο", bg: "ΦΟΝΤΟ:", bgColor: "ΧΡΩΜΑ:", useGradient: "Διαβάθμιση", gradient: "ΔΕΥΤΕΡΟ ΧΡΩΜΑ:", resetBg: "Αφαίρεση", file: "🖼️ Τοπική εικόνα", browse: "Αναζήτηση", opacity: "ΔΙΑΦΑΝΕΙΑ:", radius: "ΣΤΡΟΓΓΥΛΕΜΑ:", text: "ΚΕΙΜΕΝΟ:", accent: "ΤΟΝΟΣ:", music: "ΜΟΥΣΙΚΗ:", vol: "ΕΝΤΑΣΗ:", playing: "▶️ Παίζει", paused: "⏸ Παύση", localMusic: "🎵 Τοπικό αρχείο", font: "ΓΡΑΜΜΑΤΟΣΕΙΡΑ:", customFont: "Προσαρμ. γραμματοσειρά (Google Fonts):", customFontPlaceholder: "Π.χ.: Nunito, Lobster...", findFont: "Βρείτε τη γραμματοσειρά στο", exportTheme: "📥 Εξαγωγή", importTheme: "📤 Εισαγωγή", musicStatus: "ΚΑΤΑΣΤΑΣΗ:" },
-        ja: { flag: "🇯🇵", title: "デザイン", bg: "背景 (URL):", bgColor: "背景色:", useGradient: "グラデーション", gradient: "二番目の色:", resetBg: "画像を削除", file: "🖼️ ローカル画像", browse: "参照", opacity: "不透明度:", radius: "角の丸み:", text: "テキスト:", accent: "アクセント:", music: "音楽:", vol: "音量:", playing: "▶️ 再生中", paused: "⏸ 一時停止", localMusic: "🎵 ローカルファイル", font: "フォント:", customFont: "カスタムフォント (Google Fonts):", customFontPlaceholder: "例: Nunito, Lobster...", findFont: "フォントを検索", exportTheme: "📥 出力", importTheme: "📤 入力", musicStatus: "状態:" },
-        zh: { flag: "🇨🇳", title: "设计", bg: "背景 (URL):", bgColor: "背景颜色:", useGradient: "渐变", gradient: "第二颜色:", resetBg: "移除图片", file: "🖼️ 本地图像", browse: "浏览", opacity: "透明度:", radius: "圆角:", text: "文本:", accent: "强调色:", music: "音乐:", vol: "音量:", playing: "▶️ 播放中", paused: "⏸ 已暂停", localMusic: "🎵 本地文件", font: "字体:", customFont: "自定义字体 (Google Fonts):", customFontPlaceholder: "例如: Nunito, Lobster...", findFont: "找到字体", exportTheme: "📥 导出", importTheme: "📤 导入", musicStatus: "状态:" },
-        ko: { flag: "🇰🇷", title: "디자인", bg: "배경 (URL):", bgColor: "배경색:", useGradient: "그라데이션", gradient: "두 번째 색상:", resetBg: "이미지 제거", file: "🖼️ 로컬 이미지", browse: "찾기", opacity: "불투명도:", radius: "둥글기:", text: "텍스트:", accent: "강조색:", music: "음악:", vol: "볼륨:", playing: "▶️ 재생 중", paused: "⏸ 일시 중지", localMusic: "🎵 로컬 파일", font: "폰트:", customFont: "커스텀 폰트 (Google Fonts):", customFontPlaceholder: "예: Nunito, Lobster...", findFont: "글꼴 찾기", exportTheme: "📥 내보내기", importTheme: "📤 가져오기", musicStatus: "상태:" },
-        th: { flag: "🇹🇭", title: "การออกแบบ", bg: "พื้นหลัง (URL):", bgColor: "สีพื้นหลัง:", useGradient: "ไล่เฉดสี", gradient: "สีที่สอง:", resetBg: "ลบรูปภาพ", file: "🖼️ รูปภาพในเครื่อง", browse: "เลือกไฟล์", opacity: "ความโปร่งแสง:", radius: "ความมน:", text: "ข้อความ:", accent: "สีเน้น:", music: "เพลง:", vol: "ระดับเสียง:", playing: "▶️ กำลังเล่น", paused: "⏸ หยุดชั่วคราว", localMusic: "🎵 ไฟล์ในเครื่อง", font: "แบบอักษร:", customFont: "แบบอักษรเอง (Google Fonts):", customFontPlaceholder: "เช่น: Nunito, Lobster...", findFont: "ค้นหาแบบอักษรได้ที่", exportTheme: "📥 ส่งออก", importTheme: "📤 นำเข้า", musicStatus: "สถานะ:" },
-        vi: { flag: "🇻🇳", title: "Thiết kế", bg: "NỀN (URL):", bgColor: "MÀU NỀN:", useGradient: "Chuyển màu", gradient: "MÀU THỨ HAI:", resetBg: "Xóa ảnh", file: "🖼️ Ảnh cục bộ", browse: "Duyệt tệp", opacity: "ĐỘ MỜ:", radius: "BO GÓC:", text: "VĂN BẢN:", accent: "MÀU NHẤN:", music: "NHẠC:", vol: "ÂM LƯỢNG:", playing: "▶️ Đang phát", paused: "⏸ Đang tạm dừng", localMusic: "🎵 Tệp cục bộ", font: "PHÔNG CHỮ:", customFont: "Phông tùy chỉnh (Google Fonts):", customFontPlaceholder: "VD: Nunito, Lobster...", findFont: "Tìm phông chữ tại", exportTheme: "📥 Xuất", importTheme: "📤 Nhập", musicStatus: "TRẠNG THÁI:" },
-        ar: { flag: "🇸🇦", title: "تصميم", bg: "الخلفية:", bgColor: "لون الخلفية:", useGradient: "تدرج", gradient: "اللون الثاني:", resetBg: "إزالة الصورة", file: "🖼️ صورة محلية", browse: "تصفح", opacity: "الشفافية:", radius: "الاستدارة:", text: "النص:", accent: "اللون:", music: "موسيقى:", vol: "الصوت:", playing: "▶️ يعمل", paused: "⏸ متوقف", localMusic: "🎵 ملف محلي", font: "الخط:", customFont: "خط مخصص (Google Fonts):", customFontPlaceholder: "مثال: Nunito, Lobster...", findFont: "ابحث عن الخط في", exportTheme: "📥 تصدير", importTheme: "📤 استيراد", musicStatus: "الحالة:" }
+    // ─── HELPERS ────────────────────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const getObj = (key, def) => { try { const v = GM_getValue(key, null); return v !== null ? JSON.parse(v) : def; } catch { return def; } };
+    const setObj = (key, val) => GM_setValue(key, JSON.stringify(val));
+    const hexToRgb = hex => { const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16); return `${r},${g},${b}`; };
+    const fetchImageAsBase64 = (url, ok, fail) => GM_xmlhttpRequest({ method:'GET', url, responseType:'blob',
+        onload: ({response}) => { const fr = new FileReader(); fr.onload = e => ok(e.target.result); fr.readAsDataURL(response); },
+        onerror: fail });
+
+    // ─── ORIGINAL SITE SYMBOLS ──────────────────────────────────────────────────
+    const ORIGINAL_SYMBOLS = [
+    {
+        key: 'edit',
+        original: '✎',
+        labels: {
+            uk: '✎ — Редагувати',
+            en: '✎ — Edit',
+            pl: '✎ — Edytuj',
+            de: '✎ — Bearbeiten',
+            fr: '✎ — Modifier',
+            es: '✎ — Editar',
+            it: '✎ — Modifica',
+            pt: '✎ — Editar',
+            tr: '✎ — Düzenle',
+            nl: '✎ — Bewerken',
+            sv: '✎ — Redigera',
+            cs: '✎ — Upravit',
+            el: '✎ — Επεξεργασία',
+            ja: '✎ — 編集',
+            zh: '✎ — 编辑',
+            ko: '✎ — 편집',
+            th: '✎ — แก้ไข',
+            vi: '✎ — Chỉnh sửa',
+            ar: '✎ — تحرير',
+        }
+    },
+    {
+        key: 'smile',
+        original: '☻',
+        labels: {
+            uk: '☻ — Смайл',
+            en: '☻ — Smile',
+            pl: '☻ — Uśmiech',
+            de: '☻ — Lächeln',
+            fr: '☻ — Sourire',
+            es: '☻ — Sonrisa',
+            it: '☻ — Sorriso',
+            pt: '☻ — Sorriso',
+            tr: '☻ — Gülümseme',
+            nl: '☻ — Glimlach',
+            sv: '☻ — Leende',
+            cs: '☻ — Úsměv',
+            el: '☻ — Χαμόγελο',
+            ja: '☻ — スマイル',
+            zh: '☻ — 微笑',
+            ko: '☻ — 미소',
+            th: '☻ — ยิ้ม',
+            vi: '☻ — Nụ cười',
+            ar: '☻ — ابتسامة',
+        }
+    },
+    {
+        key: 'heart',
+        original: '♥',
+        labels: {
+            uk: '♥ — Серце',
+            en: '♥ — Heart',
+            pl: '♥ — Serce',
+            de: '♥ — Herz',
+            fr: '♥ — Cœur',
+            es: '♥ — Corazón',
+            it: '♥ — Cuore',
+            pt: '♥ — Coração',
+            tr: '♥ — Kalp',
+            nl: '♥ — Hart',
+            sv: '♥ — Hjärta',
+            cs: '♥ — Srdce',
+            el: '♥ — Καρδιά',
+            ja: '♥ — ハート',
+            zh: '♥ — 爱心',
+            ko: '♥ — 하트',
+            th: '♥ — หัวใจ',
+            vi: '♥ — Trái tim',
+            ar: '♥ — قلب',
+        }
+    },
+    {
+        key: 'comment',
+        original: '¶',
+        labels: {
+            uk: '¶ — Коментар',
+            en: '¶ — Comment',
+            pl: '¶ — Komentarz',
+            de: '¶ — Kommentar',
+            fr: '¶ — Commentaire',
+            es: '¶ — Comentario',
+            it: '¶ — Commento',
+            pt: '¶ — Comentário',
+            tr: '¶ — Yorum',
+            nl: '¶ — Reactie',
+            sv: '¶ — Kommentar',
+            cs: '¶ — Komentář',
+            el: '¶ — Σχόλιο',
+            ja: '¶ — コメント',
+            zh: '¶ — 评论',
+            ko: '¶ — 댓글',
+            th: '¶ — ความคิดเห็น',
+            vi: '¶ — Bình luận',
+            ar: '¶ — تعليق',
+        }
+    },
+    {
+        key: 'notif',
+        original: '*',
+        labels: {
+            uk: '* — Нотифікація',
+            en: '* — Notification',
+            pl: '* — Powiadomienie',
+            de: '* — Benachrichtigung',
+            fr: '* — Notification',
+            es: '* — Notificación',
+            it: '* — Notifica',
+            pt: '* — Notificação',
+            tr: '* — Bildirim',
+            nl: '* — Melding',
+            sv: '* — Notis',
+            cs: '* — Oznámení',
+            el: '* — Ειδοποίηση',
+            ja: '* — 通知',
+            zh: '* — 通知',
+            ko: '* — 알림',
+            th: '* — การแจ้งเตือน',
+            vi: '* — Thông báo',
+            ar: '* — إشعار',
+        }
+    },
+    {
+        key: 'moon',
+        original: '☽',
+        labels: {
+            uk: '☽ — Місяць',
+            en: '☽ — Moon',
+            pl: '☽ — Księżyc',
+            de: '☽ — Mond',
+            fr: '☽ — Lune',
+            es: '☽ — Luna',
+            it: '☽ — Luna',
+            pt: '☽ — Lua',
+            tr: '☽ — Ay',
+            nl: '☽ — Maan',
+            sv: '☽ — Måne',
+            cs: '☽ — Měsíc',
+            el: '☽ — Σελήνη',
+            ja: '☽ — 月',
+            zh: '☽ — 月亮',
+            ko: '☽ — 달',
+            th: '☽ — พระจันทร์',
+            vi: '☽ — Mặt trăng',
+            ar: '☽ — القمر',
+        }
+    },
+    {
+        key: 'sun',
+        original: '☼',
+        labels: {
+            uk: '☼ — Сонце',
+            en: '☼ — Sun',
+            pl: '☼ — Słońce',
+            de: '☼ — Sonne',
+            fr: '☼ — Soleil',
+            es: '☼ — Sol',
+            it: '☼ — Sole',
+            pt: '☼ — Sol',
+            tr: '☼ — Güneş',
+            nl: '☼ — Zon',
+            sv: '☼ — Sol',
+            cs: '☼ — Slunce',
+            el: '☼ — Ήλιος',
+            ja: '☼ — 太陽',
+            zh: '☼ — 太阳',
+            ko: '☼ — 태양',
+            th: '☼ — ดวงอาทิตย์',
+            vi: '☼ — Mặt trời',
+            ar: '☼ — الشمس',
+        }
+    },
+    {
+        key: 'bolt',
+        original: '⚡',
+        labels: {
+            uk: '⚡ — Блискавка',
+            en: '⚡ — Lightning',
+            pl: '⚡ — Błyskawica',
+            de: '⚡ — Blitz',
+            fr: '⚡ — Éclair',
+            es: '⚡ — Rayo',
+            it: '⚡ — Fulmine',
+            pt: '⚡ — Relâmpago',
+            tr: '⚡ — Şimşek',
+            nl: '⚡ — Bliksem',
+            sv: '⚡ — Blixt',
+            cs: '⚡ — Blesk',
+            el: '⚡ — Αστραπή',
+            ja: '⚡ — 稲妻',
+            zh: '⚡ — 闪电',
+            ko: '⚡ — 번개',
+            th: '⚡ — สายฟ้า',
+            vi: '⚡ — Tia chớp',
+            ar: '⚡ — برق',
+        }
+    },
+    {
+        key: 'refresh',
+        original: '↻',
+        labels: {
+            uk: '↻ — Оновити',
+            en: '↻ — Refresh',
+            pl: '↻ — Odśwież',
+            de: '↻ — Aktualisieren',
+            fr: '↻ — Actualiser',
+            es: '↻ — Actualizar',
+            it: '↻ — Aggiorna',
+            pt: '↻ — Atualizar',
+            tr: '↻ — Yenile',
+            nl: '↻ — Vernieuwen',
+            sv: '↻ — Uppdatera',
+            cs: '↻ — Obnovit',
+            el: '↻ — Ανανέωση',
+            ja: '↻ — 更新',
+            zh: '↻ — 刷新',
+            ko: '↻ — 새로고침',
+            th: '↻ — รีเฟรช',
+            vi: '↻ — Làm mới',
+            ar: '↻ — تحديث',
+        }
+    },
+    {
+        key: 'close',
+        original: '×',
+        labels: {
+            uk: '× — Закрити',
+            en: '× — Close',
+            pl: '× — Zamknij',
+            de: '× — Schließen',
+            fr: '× — Fermer',
+            es: '× — Cerrar',
+            it: '× — Chiudi',
+            pt: '× — Fechar',
+            tr: '× — Kapat',
+            nl: '× — Sluiten',
+            sv: '× — Stäng',
+            cs: '× — Zavřít',
+            el: '× — Κλείσιμο',
+            ja: '× — 閉じる',
+            zh: '× — 关闭',
+            ko: '× — 닫기',
+            th: '× — ปิด',
+            vi: '× — Đóng',
+            ar: '× — إغلاق',
+        }
+    },
+    {
+        key: 'back',
+        original: '↩',
+        labels: {
+            uk: '↩ — Назад',
+            en: '↩ — Back',
+            pl: '↩ — Wstecz',
+            de: '↩ — Zurück',
+            fr: '↩ — Retour',
+            es: '↩ — Atrás',
+            it: '↩ — Indietro',
+            pt: '↩ — Voltar',
+            tr: '↩ — Geri',
+            nl: '↩ — Terug',
+            sv: '↩ — Tillbaka',
+            cs: '↩ — Zpět',
+            el: '↩ — Πίσω',
+            ja: '↩ — 戻る',
+            zh: '↩ — 返回',
+            ko: '↩ — 뒤로',
+            th: '↩ — ย้อนกลับ',
+            vi: '↩ — Quay lại',
+            ar: '↩ — رجوع',
+        }
+    },
+    {
+        key: 'mail',
+        original: '✉︎',
+        labels: {
+            uk: '✉︎ — Повідомлення',
+            en: '✉︎ — Message',
+            pl: '✉︎ — Wiadomość',
+            de: '✉︎ — Nachricht',
+            fr: '✉︎ — Message',
+            es: '✉︎ — Mensaje',
+            it: '✉︎ — Messaggio',
+            pt: '✉︎ — Mensagem',
+            tr: '✉︎ — Mesaj',
+            nl: '✉︎ — Bericht',
+            sv: '✉︎ — Meddelande',
+            cs: '✉︎ — Zpráva',
+            el: '✉︎ — Μήνυμα',
+            ja: '✉︎ — メッセージ',
+            zh: '✉︎ — 消息',
+            ko: '✉︎ — 메시지',
+            th: '✉︎ — ข้อความ',
+            vi: '✉︎ — Tin nhắn',
+            ar: '✉︎ — رسالة',
+        }
+    },
+];
+
+    // ─── SYMBOL THEMES ──────────────────────────────────────────────────────────
+    const SYMBOL_THEMES = {
+        none: {
+            labels: { uk:'— За замовчуванням', en:'— Default', pl:'— Domyślny', de:'— Standard', fr:'— Par défaut', es:'— Por defecto', it:'— Predefinito', pt:'— Padrão', tr:'— Varsayılan', nl:'— Standaard', sv:'— Standard', cs:'— Výchozí', el:'— Προεπιλογή', ja:'— デフォルト', zh:'— 默认', ko:'— 기본값', th:'— ค่าเริ่มต้น', vi:'— Mặc định', ar:'— افتراضي' },
+            map: {}
+        },
+        simple: {
+            labels: { uk:'· Простота', en:'· Simplicity', pl:'· Prostota', de:'· Einfachheit', fr:'· Simplicité', es:'· Simplicidad', it:'· Semplicità', pt:'· Simplicidade', tr:'· Sadelik', nl:'· Eenvoud', sv:'· Enkelhet', cs:'· Jednoduchost', el:'· Απλότητα', ja:'· シンプル', zh:'· 简洁', ko:'· 단순함', th:'· ความเรียบง่าย', vi:'· Đơn giản', ar:'· بساطة' },
+            map: { '✎':'🖍', '☻':'•ᴗ•', '♥':'❤︎', '¶':'🗨', '*':'ⓘ', '☽':'☽', '☼':'꥟', '⚡':'⚡︎', '↻':'🗘', '×':'🗙', '↩':'↩', '✉︎':'🗪' }
+        },
+        grace: {
+            labels: { uk:'✒️ Грація', en:'✒️ Grace', pl:'✒️ Gracja', de:'✒️ Anmut', fr:'✒️ Grâce', es:'✒️ Gracia', it:'✒️ Grazia', pt:'✒️ Graça', tr:'✒️ Zarafet', nl:'✒️ Gratie', sv:'✒️ Elegans', cs:'✒️ Elegance', el:'✒️ Χάρη', ja:'✒️ 優雅', zh:'✒️ 优雅', ko:'✒️ 우아함', th:'✒️ สง่างาม', vi:'✒️ Thanh lịch', ar:'✒️ رشاقة' },
+            map: { '✎':'🖋', '☻':'•ᴗ•', '♥':'ꨄ︎', '¶':'◛', '*':'ᝰ.ᐟ', '☽':'ᶻ 𝗓 𐰁 .ᐟ', '☼':'✹', '⚡':'↯', '↻':'↻', '×':'𝒙', '↩':'⬅', '✉︎':'◛' }
+        },
+        cute: {
+            labels: { uk:'🌸 Мило', en:'🌸 Cute', pl:'🌸 Słodko', de:'🌸 Süß', fr:'🌸 Mignon', es:'🌸 Lindo', it:'🌸 Carino', pt:'🌸 Fofo', tr:'🌸 Sevimli', nl:'🌸 Schattig', sv:'🌸 Gullig', cs:'🌸 Roztomilý', el:'🌸 Χαριτωμένο', ja:'🌸 かわいい', zh:'🌸 可爱', ko:'🌸 귀여운', th:'🌸 น่ารัก', vi:'🌸 Dễ thương', ar:'🌸 لطيف' },
+            map: { '✎':'🖌', '☻':'𐔌՞. .՞𐦯', '♥':'𑣲', '¶':'🗫', '*':'❁', '☽':'✧', '☼':'✴︎', '⚡':'𓆩𓆪', '↻':'ᯤ', '×':'ᐊ', '↩':'➜]', '✉︎':'/•᷅‎‎•᷄\\੭' }
+        },
+        dark: {
+            labels: { uk:'🖤 Темно', en:'🖤 Dark', pl:'🖤 Ciemno', de:'🖤 Dunkel', fr:'🖤 Sombre', es:'🖤 Oscuro', it:'🖤 Scuro', pt:'🖤 Sombrio', tr:'🖤 Karanlık', nl:'🖤 Donker', sv:'🖤 Mörk', cs:'🖤 Temný', el:'🖤 Σκοτεινό', ja:'🖤 ダーク', zh:'🖤 暗黑', ko:'🖤 어두운', th:'🖤 มืด', vi:'🖤 Tối', ar:'🖤 داكن' },
+            map: { '✎':'🖊', '☻':'☻', '♥':'𓏲ּ𝄢', '¶':'⎙', '*':'◉', '☽':'☽', '☼':'✺', '⚡':'🌩', '↻':'⟳', '×':'⏎', '↩':'←', '✉︎':'🗁' }
+        },
+        emo: {
+            labels: { uk:'🥀 Емо', en:'🥀 Emo', pl:'🥀 Emo', de:'🥀 Emo', fr:'🥀 Émo', es:'🥀 Emo', it:'🥀 Emo', pt:'🥀 Emo', tr:'🥀 Emo', nl:'🥀 Emo', sv:'🥀 Emo', cs:'🥀 Emo', el:'🥀 Έμο', ja:'🥀 エモ', zh:'🥀 暗系', ko:'🥀 에모', th:'🥀 อีโม', vi:'🥀 Emo', ar:'🥀 إيمو' },
+            map: { '✎':'🗡', '☻':'×̷̷͜×̷', '♥':'ᰔ', '¶':'⌯⌲', '*':'✗', '☽':'⛧', '☼':'❂', '⚡':'☠︎', '↻':'🗘', '×':'⏻', '↩':'⍈', '✉︎':'🗣' }
+        },
+        medieval: {
+            labels: { uk:'⚔️ Середньовіччя', en:'⚔️ Medieval', pl:'⚔️ Średniowiecze', de:'⚔️ Mittelalter', fr:'⚔️ Médiéval', es:'⚔️ Medieval', it:'⚔️ Medievale', pt:'⚔️ Medieval', tr:'⚔️ Ortaçağ', nl:'⚔️ Middeleeuws', sv:'⚔️ Medeltid', cs:'⚔️ Středověk', el:'⚔️ Μεσαίωνας', ja:'⚔️ 中世', zh:'⚔️ 中世纪', ko:'⚔️ 중세', th:'⚔️ ยุคกลาง', vi:'⚔️ Trung cổ', ar:'⚔️ العصور الوسطى' },
+            map: { '✎':'🪶', '☻':'ッ', '♥':'𖹭', '¶':'✉︎', '*':'࿄', '☽':'⟢', '☼':'✹', '⚡':'⚯ ͛', '↻':'⭮', '×':'𝒙', '↩':'ก็็็็็็็็็็็็็็็็็็', '✉︎':'✉︎' }
+        },
     };
 
-    const fontList = ["Default", "Roboto", "Montserrat", "Open Sans", "Playfair Display", "Oswald", "Pacifico", "Caveat", "Kelly Slab"];
+    const getThemeLabel = (themeKey, lang) => {
+        const t = SYMBOL_THEMES[themeKey];
+        if (!t) return themeKey;
+        return t.labels[lang] || t.labels['en'] || themeKey;
+    };
 
-    // --- STATE ---
-    let userLang = GM_getValue('lang', navigator.language.slice(0, 2));
+    // ─── I18N ───────────────────────────────────────────────────────────────────
+    const i18n = {
+        uk: {
+            flag:"🇺🇦", title:"Дизайн", bg:"ФОН (URL):", bgColor:"КОЛІР ФОНУ:", useGradient:"Градієнт",
+            gradient:"ДРУГИЙ КОЛІР:", resetBg:"Прибрати зображення", file:"🖼️ Локальне зображення",
+            browse:"Огляд", opacity:"ЗАТЕМНЕННЯ:", radius:"ОКРУГЛЕННЯ:", text:"ТЕКСТ:", accent:"АКЦЕНТ:",
+            music:"МУЗИКА (Файл/URL):", vol:"ГУЧНІСТЬ:", playing:"▶️ Грає", paused:"⏸ На паузі",
+            localMusic:"🎵 Локальний файл", font:"ШРИФТ:", customFont:"Свій шрифт (Google Fonts):",
+            customFontPlaceholder:"Напр.: Nunito, Lobster...", findFont:"Знайди шрифт на",
+            exportTheme:"📥 Експорт", importTheme:"📤 Імпорт", musicStatus:"МУЗИКА:",
+            removeMusic:"🗑️ Прибрати музику", symbolTheme:"ТЕМА СИМВОЛІВ:",
+            tabDesign:"🎨 Дизайн", tabEffects:"✨ Ефекти", tabProfile:"👤 Профіль",
+            fxBlood:"Кров", fxGlitter:"Блискітки", fxRain:"Дощ",
+            fxDust:"Пил", fxFireflies:"Світлячки", fxColor:"Колір", fxIntensity:"Інтенс.", fxSpeed:"Швидкість",
+            profFrame:"Форма рамки:", profFrameNone:"Без",
+            profFrameRound:"Круг", profFrameSquare:"Квадрат", profFrameRoundedSq:"Скруглений", profFrameHeart:"Серце", profFrameSun:"Сонце", profFrameCat:"Котик",
+            profGlow:"Сяйво:", profGlowNone:"Без", profGlowOn:"Є",
+            profAvatarPos:"Розташування аватару:", profPosLeft:"Ліво", profPosCenter:"Центр", profPosRight:"Право",
+            profSave:"💾 Зберегти", profNote:"⚠️ Зміни видно тільки вам",
+            symCustomLabel:"✏️ Власна тема", symCustomName:"Назва теми:", symCustomNamePh:"Напр.: Моя тема",
+            symCustomSave:"💾 Зберегти тему", symCustomSaved:"✅ Збережено!", symShowAll:"Всі символи",
+            symHint:"Знайти емодзі:",
+        },
+        en: {
+    flag:"🇺🇸", title:"Design", bg:"BG (URL):", bgColor:"BG COLOR:", useGradient:"Gradient",
+    gradient:"SECOND COLOR:", resetBg:"Remove Image", file:"🖼️ Local image",
+    browse:"Browse", opacity:"OPACITY:", radius:"ROUNDING:", text:"TEXT:", accent:"ACCENT:",
+    music:"MUSIC (File/URL):", vol:"VOLUME:", playing:"▶️ Playing", paused:"⏸ Paused",
+    localMusic:"🎵 Local File", font:"FONT:", customFont:"Custom font (Google Fonts):",
+    customFontPlaceholder:"E.g.: Nunito, Lobster...", findFont:"Find font on",
+    exportTheme:"📥 Export", importTheme:"📤 Import", musicStatus:"MUSIC:",
+    removeMusic:"🗑️ Remove Music", symbolTheme:"SYMBOL THEME:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Effects", tabProfile:"👤 Profile",
+    fxBlood:"Blood", fxGlitter:"Glitter", fxRain:"Rain",
+    fxDust:"Dust", fxFireflies:"Fireflies", fxColor:"Color", fxIntensity:"Intensity", fxSpeed:"Speed",
+    profFrame:"Frame Shape:", profFrameNone:"None",
+    profFrameRound:"Circle", profFrameSquare:"Square", profFrameRoundedSq:"Rounded", profFrameHeart:"Heart", profFrameSun:"Sun", profFrameCat:"Cat",
+    profGlow:"Glow:", profGlowNone:"None", profGlowOn:"On",
+    profAvatarPos:"Avatar Position:", profPosLeft:"Left", profPosCenter:"Center", profPosRight:"Right",
+    profSave:"💾 Save", profNote:"⚠️ Changes visible only to you",
+    symCustomLabel:"✏️ Custom Theme", symCustomName:"Theme name:", symCustomNamePh:"E.g.: My Theme",
+    symCustomSave:"💾 Save Theme", symCustomSaved:"✅ Saved!", symShowAll:"All symbols",
+    symHint:"Find emoji:",
+},
+
+pl: {
+    flag:"🇵🇱", title:"Projekt", bg:"TŁO (URL):", bgColor:"KOLOR TŁA:", useGradient:"Gradient",
+    gradient:"DRUGI KOLOR:", resetBg:"Usuń obraz", file:"🖼️ Lokalny obraz",
+    browse:"Przeglądaj", opacity:"PRZEZROCZYSTOŚĆ:", radius:"ZAOKRĄGLENIE:", text:"TEKST:", accent:"AKCENT:",
+    music:"MUZYKA (Plik/URL):", vol:"GŁOŚNOŚĆ:", playing:"▶️ Odtwarzanie", paused:"⏸ Wstrzymano",
+    localMusic:"🎵 Plik lokalny", font:"CZCIONKA:", customFont:"Własna czcionka (Google Fonts):",
+    customFontPlaceholder:"Np.: Nunito, Lobster...", findFont:"Znajdź czcionkę na",
+    exportTheme:"📥 Eksportuj", importTheme:"📤 Importuj", musicStatus:"MUZYKA:",
+    removeMusic:"🗑️ Usuń muzykę", symbolTheme:"MOTYW SYMBOLI:",
+    tabDesign:"🎨 Projekt", tabEffects:"✨ Efekty", tabProfile:"👤 Profil",
+    fxBlood:"Krew", fxGlitter:"Brokat", fxRain:"Deszcz",
+    fxDust:"Pył", fxFireflies:"Świetliki", fxColor:"Kolor", fxIntensity:"Intensywność", fxSpeed:"Prędkość",
+    profFrame:"Kształt ramki:", profFrameNone:"Brak",
+    profFrameRound:"Koło", profFrameSquare:"Kwadrat", profFrameRoundedSq:"Zaokrąglony", profFrameHeart:"Serce", profFrameSun:"Słońce", profFrameCat:"Kot",
+    profGlow:"Poświata:", profGlowNone:"Brak", profGlowOn:"Włączona",
+    profAvatarPos:"Pozycja avatara:", profPosLeft:"Lewo", profPosCenter:"Środek", profPosRight:"Prawo",
+    profSave:"💾 Zapisz", profNote:"⚠️ Zmiany widoczne tylko dla ciebie",
+    symCustomLabel:"✏️ Własny motyw", symCustomName:"Nazwa motywu:", symCustomNamePh:"Np.: Mój motyw",
+    symCustomSave:"💾 Zapisz motyw", symCustomSaved:"✅ Zapisano!", symShowAll:"Wszystkie symbole",
+    symHint:"Znajdź emoji:",
+},
+
+de: {
+    flag:"🇩🇪", title:"Design", bg:"HINTERGRUND (URL):", bgColor:"HINTERGRUNDFARBE:", useGradient:"Verlauf",
+    gradient:"ZWEITE FARBE:", resetBg:"Bild entfernen", file:"🖼️ Lokales Bild",
+    browse:"Durchsuchen", opacity:"DECKKRAFT:", radius:"ABRUNDUNG:", text:"TEXT:", accent:"AKZENT:",
+    music:"MUSIK (Datei/URL):", vol:"LAUTSTÄRKE:", playing:"▶️ Wiedergabe", paused:"⏸ Pausiert",
+    localMusic:"🎵 Lokale Datei", font:"SCHRIFTART:", customFont:"Benutzerdefinierte Schriftart (Google Fonts):",
+    customFontPlaceholder:"Z.B.: Nunito, Lobster...", findFont:"Schriftart finden auf",
+    exportTheme:"📥 Exportieren", importTheme:"📤 Importieren", musicStatus:"MUSIK:",
+    removeMusic:"🗑️ Musik entfernen", symbolTheme:"SYMBOLTHEMA:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Effekte", tabProfile:"👤 Profil",
+    fxBlood:"Blut", fxGlitter:"Glitzer", fxRain:"Regen",
+    fxDust:"Staub", fxFireflies:"Glühwürmchen", fxColor:"Farbe", fxIntensity:"Intensität", fxSpeed:"Geschwindigkeit",
+    profFrame:"Rahmenform:", profFrameNone:"Keine",
+    profFrameRound:"Kreis", profFrameSquare:"Quadrat", profFrameRoundedSq:"Abgerundet", profFrameHeart:"Herz", profFrameSun:"Sonne", profFrameCat:"Katze",
+    profGlow:"Leuchten:", profGlowNone:"Keine", profGlowOn:"Ein",
+    profAvatarPos:"Avatar-Position:", profPosLeft:"Links", profPosCenter:"Mitte", profPosRight:"Rechts",
+    profSave:"💾 Speichern", profNote:"⚠️ Änderungen nur für dich sichtbar",
+    symCustomLabel:"✏️ Eigenes Thema", symCustomName:"Themenname:", symCustomNamePh:"Z.B.: Mein Thema",
+    symCustomSave:"💾 Thema speichern", symCustomSaved:"✅ Gespeichert!", symShowAll:"Alle Symbole",
+    symHint:"Emoji finden:",
+},
+
+fr: {
+    flag:"🇫🇷", title:"Design", bg:"FOND (URL) :", bgColor:"COULEUR DE FOND :", useGradient:"Dégradé",
+    gradient:"DEUXIÈME COULEUR :", resetBg:"Supprimer l’image", file:"🖼️ Image locale",
+    browse:"Parcourir", opacity:"OPACITÉ :", radius:"ARRONDI :", text:"TEXTE :", accent:"ACCENT :",
+    music:"MUSIQUE (Fichier/URL) :", vol:"VOLUME :", playing:"▶️ Lecture", paused:"⏸ Pause",
+    localMusic:"🎵 Fichier local", font:"POLICE :", customFont:"Police personnalisée (Google Fonts) :",
+    customFontPlaceholder:"Ex. : Nunito, Lobster...", findFont:"Trouver une police sur",
+    exportTheme:"📥 Exporter", importTheme:"📤 Importer", musicStatus:"MUSIQUE:",
+    removeMusic:"🗑️ Supprimer la musique", symbolTheme:"THÈME DES SYMBOLES:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Effets", tabProfile:"👤 Profil",
+    fxBlood:"Sang", fxGlitter:"Paillettes", fxRain:"Pluie",
+    fxDust:"Poussière", fxFireflies:"Lucioles", fxColor:"Couleur", fxIntensity:"Intensité", fxSpeed:"Vitesse",
+    profFrame:"Forme du cadre:", profFrameNone:"Aucun",
+    profFrameRound:"Cercle", profFrameSquare:"Carré", profFrameRoundedSq:"Arrondi", profFrameHeart:"Cœur", profFrameSun:"Soleil", profFrameCat:"Chat",
+    profGlow:"Lueur:", profGlowNone:"Aucune", profGlowOn:"Activée",
+    profAvatarPos:"Position de l’avatar:", profPosLeft:"Gauche", profPosCenter:"Centre", profPosRight:"Droite",
+    profSave:"💾 Enregistrer", profNote:"⚠️ Modifications visibles uniquement pour vous",
+    symCustomLabel:"✏️ Thème personnalisé", symCustomName:"Nom du thème:", symCustomNamePh:"Ex.: Mon thème",
+    symCustomSave:"💾 Enregistrer le thème", symCustomSaved:"✅ Enregistré!", symShowAll:"Tous les symboles",
+    symHint:"Trouver un emoji:",
+},
+
+es: {
+    flag:"🇪🇸", title:"Diseño", bg:"FONDO (URL):", bgColor:"COLOR DE FONDO:", useGradient:"Degradado",
+    gradient:"SEGUNDO COLOR:", resetBg:"Eliminar imagen", file:"🖼️ Imagen local",
+    browse:"Explorar", opacity:"OPACIDAD:", radius:"REDONDEO:", text:"TEXTO:", accent:"ACENTO:",
+    music:"MÚSICA (Archivo/URL):", vol:"VOLUMEN:", playing:"▶️ Reproduciendo", paused:"⏸ Pausado",
+    localMusic:"🎵 Archivo local", font:"FUENTE:", customFont:"Fuente personalizada (Google Fonts):",
+    customFontPlaceholder:"Ej.: Nunito, Lobster...", findFont:"Buscar fuente en",
+    exportTheme:"📥 Exportar", importTheme:"📤 Importar", musicStatus:"MÚSICA:",
+    removeMusic:"🗑️ Eliminar música", symbolTheme:"TEMA DE SÍMBOLOS:",
+    tabDesign:"🎨 Diseño", tabEffects:"✨ Efectos", tabProfile:"👤 Perfil",
+    fxBlood:"Sangre", fxGlitter:"Brillo", fxRain:"Lluvia",
+    fxDust:"Polvo", fxFireflies:"Luciérnagas", fxColor:"Color", fxIntensity:"Intensidad", fxSpeed:"Velocidad",
+    profFrame:"Forma del marco:", profFrameNone:"Ninguno",
+    profFrameRound:"Círculo", profFrameSquare:"Cuadrado", profFrameRoundedSq:"Redondeado", profFrameHeart:"Corazón", profFrameSun:"Sol", profFrameCat:"Gato",
+    profGlow:"Resplandor:", profGlowNone:"Ninguno", profGlowOn:"Activado",
+    profAvatarPos:"Posición del avatar:", profPosLeft:"Izquierda", profPosCenter:"Centro", profPosRight:"Derecha",
+    profSave:"💾 Guardar", profNote:"⚠️ Cambios visibles solo para ti",
+    symCustomLabel:"✏️ Tema personalizado", symCustomName:"Nombre del tema:", symCustomNamePh:"Ej.: Mi tema",
+    symCustomSave:"💾 Guardar tema", symCustomSaved:"✅ ¡Guardado!", symShowAll:"Todos los símbolos",
+    symHint:"Buscar emoji:",
+},
+
+it: {
+    flag:"🇮🇹", title:"Design", bg:"SFONDO (URL):", bgColor:"COLORE SFONDO:", useGradient:"Gradiente",
+    gradient:"SECONDO COLORE:", resetBg:"Rimuovi immagine", file:"🖼️ Immagine locale",
+    browse:"Sfoglia", opacity:"OPACITÀ:", radius:"ARROTONDAMENTO:", text:"TESTO:", accent:"ACCENTO:",
+    music:"MUSICA (File/URL):", vol:"VOLUME:", playing:"▶️ In riproduzione", paused:"⏸ In pausa",
+    localMusic:"🎵 File locale", font:"FONT:", customFont:"Font personalizzato (Google Fonts):",
+    customFontPlaceholder:"Es.: Nunito, Lobster...", findFont:"Trova font su",
+    exportTheme:"📥 Esporta", importTheme:"📤 Importa", musicStatus:"MUSICA:",
+    removeMusic:"🗑️ Rimuovi musica", symbolTheme:"TEMA SIMBOLI:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Effetti", tabProfile:"👤 Profilo",
+    fxBlood:"Sangue", fxGlitter:"Glitter", fxRain:"Pioggia",
+    fxDust:"Polvere", fxFireflies:"Lucciole", fxColor:"Colore", fxIntensity:"Intensità", fxSpeed:"Velocità",
+    profFrame:"Forma cornice:", profFrameNone:"Nessuna",
+    profFrameRound:"Cerchio", profFrameSquare:"Quadrato", profFrameRoundedSq:"Arrotondato", profFrameHeart:"Cuore", profFrameSun:"Sole", profFrameCat:"Gatto",
+    profGlow:"Bagliore:", profGlowNone:"Nessuno", profGlowOn:"Attivo",
+    profAvatarPos:"Posizione avatar:", profPosLeft:"Sinistra", profPosCenter:"Centro", profPosRight:"Destra",
+    profSave:"💾 Salva", profNote:"⚠️ Modifiche visibili solo a te",
+    symCustomLabel:"✏️ Tema personalizzato", symCustomName:"Nome tema:", symCustomNamePh:"Es.: Il mio tema",
+    symCustomSave:"💾 Salva tema", symCustomSaved:"✅ Salvato!", symShowAll:"Tutti i simboli",
+    symHint:"Trova emoji:",
+},
+
+pt: {
+    flag:"🇵🇹", title:"Design", bg:"FUNDO (URL):", bgColor:"COR DE FUNDO:", useGradient:"Gradiente",
+    gradient:"SEGUNDA COR:", resetBg:"Remover imagem", file:"🖼️ Imagem local",
+    browse:"Procurar", opacity:"OPACIDADE:", radius:"ARREDONDAMENTO:", text:"TEXTO:", accent:"ACENTO:",
+    music:"MÚSICA (Ficheiro/URL):", vol:"VOLUME:", playing:"▶️ A tocar", paused:"⏸ Pausado",
+    localMusic:"🎵 Ficheiro local", font:"FONTE:", customFont:"Fonte personalizada (Google Fonts):",
+    customFontPlaceholder:"Ex.: Nunito, Lobster...", findFont:"Encontrar fonte em",
+    exportTheme:"📥 Exportar", importTheme:"📤 Importar", musicStatus:"MÚSICA:",
+    removeMusic:"🗑️ Remover música", symbolTheme:"TEMA DE SÍMBOLOS:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Efeitos", tabProfile:"👤 Perfil",
+    fxBlood:"Sangue", fxGlitter:"Brilho", fxRain:"Chuva",
+    fxDust:"Poeira", fxFireflies:"Vagalumes", fxColor:"Cor", fxIntensity:"Intensidade", fxSpeed:"Velocidade",
+    profFrame:"Forma da moldura:", profFrameNone:"Nenhuma",
+    profFrameRound:"Círculo", profFrameSquare:"Quadrado", profFrameRoundedSq:"Arredondado", profFrameHeart:"Coração", profFrameSun:"Sol", profFrameCat:"Gato",
+    profGlow:"Brilho:", profGlowNone:"Nenhum", profGlowOn:"Ativo",
+    profAvatarPos:"Posição do avatar:", profPosLeft:"Esquerda", profPosCenter:"Centro", profPosRight:"Direita",
+    profSave:"💾 Guardar", profNote:"⚠️ Alterações visíveis apenas para ti",
+    symCustomLabel:"✏️ Tema personalizado", symCustomName:"Nome do tema:", symCustomNamePh:"Ex.: O meu tema",
+    symCustomSave:"💾 Guardar tema", symCustomSaved:"✅ Guardado!", symShowAll:"Todos os símbolos",
+    symHint:"Encontrar emoji:",
+},
+
+tr: {
+    flag:"🇹🇷", title:"Tasarım", bg:"ARKA PLAN (URL):", bgColor:"ARKA PLAN RENGİ:", useGradient:"Gradyan",
+    gradient:"İKİNCİ RENK:", resetBg:"Resmi kaldır", file:"🖼️ Yerel resim",
+    browse:"Gözat", opacity:"ŞEFFAFLIK:", radius:"YUVARLAMA:", text:"METİN:", accent:"VURGU:",
+    music:"MÜZİK (Dosya/URL):", vol:"SEVİYE:", playing:"▶️ Çalıyor", paused:"⏸ Duraklatıldı",
+    localMusic:"🎵 Yerel dosya", font:"YAZI TİPİ:", customFont:"Özel yazı tipi (Google Fonts):",
+    customFontPlaceholder:"Örn: Nunito, Lobster...", findFont:"Yazı tipi bul",
+    exportTheme:"📥 Dışa aktar", importTheme:"📤 İçe aktar", musicStatus:"MÜZİK:",
+    removeMusic:"🗑️ Müziği kaldır", symbolTheme:"SEMBOL TEMASI:",
+    tabDesign:"🎨 Tasarım", tabEffects:"✨ Efektler", tabProfile:"👤 Profil",
+    fxBlood:"Kan", fxGlitter:"Parıltı", fxRain:"Yağmur",
+    fxDust:"Toz", fxFireflies:"Sinekler", fxColor:"Renk", fxIntensity:"Yoğunluk", fxSpeed:"Hız",
+    profFrame:"Çerçeve şekli:", profFrameNone:"Yok",
+    profFrameRound:"Daire", profFrameSquare:"Kare", profFrameRoundedSq:"Yuvarlak", profFrameHeart:"Kalp", profFrameSun:"Güneş", profFrameCat:"Kedi",
+    profGlow:"Parlama:", profGlowNone:"Yok", profGlowOn:"Açık",
+    profAvatarPos:"Avatar konumu:", profPosLeft:"Sol", profPosCenter:"Orta", profPosRight:"Sağ",
+    profSave:"💾 Kaydet", profNote:"⚠️ Değişiklikler sadece sana görünür",
+    symCustomLabel:"✏️ Özel tema", symCustomName:"Tema adı:", symCustomNamePh:"Örn: Benim temam",
+    symCustomSave:"💾 Temayı kaydet", symCustomSaved:"✅ Kaydedildi!", symShowAll:"Tüm semboller",
+    symHint:"Emoji bul:",
+},
+
+nl: {
+    flag:"🇳🇱", title:"Ontwerp", bg:"ACHTERGROND (URL):", bgColor:"ACHTERGRONDKLEUR:", useGradient:"Verloop",
+    gradient:"TWEEDE KLEUR:", resetBg:"Afbeelding verwijderen", file:"🖼️ Lokale afbeelding",
+    browse:"Bladeren", opacity:"DOORZICHTIGHEID:", radius:"AFRONDING:", text:"TEKST:", accent:"ACCENT:",
+    music:"MUZIEK (Bestand/URL):", vol:"VOLUME:", playing:"▶️ Afspelen", paused:"⏸ Gepauzeerd",
+    localMusic:"🎵 Lokaal bestand", font:"LETTERTYPE:", customFont:"Aangepast lettertype (Google Fonts):",
+    customFontPlaceholder:"Bijv.: Nunito, Lobster...", findFont:"Zoek lettertype op",
+    exportTheme:"📥 Exporteren", importTheme:"📤 Importeren", musicStatus:"MUZIEK:",
+    removeMusic:"🗑️ Muziek verwijderen", symbolTheme:"SYMBOLENTHEMA:",
+    tabDesign:"🎨 Ontwerp", tabEffects:"✨ Effecten", tabProfile:"👤 Profiel",
+    fxBlood:"Bloed", fxGlitter:"Glitter", fxRain:"Regen",
+    fxDust:"Stof", fxFireflies:"Vuurvliegjes", fxColor:"Kleur", fxIntensity:"Intensiteit", fxSpeed:"Snelheid",
+    profFrame:"Vorm frame:", profFrameNone:"Geen",
+    profFrameRound:"Cirkel", profFrameSquare:"Vierkant", profFrameRoundedSq:"Afgerond", profFrameHeart:"Hart", profFrameSun:"Zon", profFrameCat:"Kat",
+    profGlow:"Gloed:", profGlowNone:"Geen", profGlowOn:"Aan",
+    profAvatarPos:"Avatar positie:", profPosLeft:"Links", profPosCenter:"Midden", profPosRight:"Rechts",
+    profSave:"💾 Opslaan", profNote:"⚠️ Wijzigingen alleen zichtbaar voor jou",
+    symCustomLabel:"✏️ Eigen thema", symCustomName:"Thema naam:", symCustomNamePh:"Bijv.: Mijn thema",
+    symCustomSave:"💾 Thema opslaan", symCustomSaved:"✅ Opgeslagen!", symShowAll:"Alle symbolen",
+    symHint:"Emoji zoeken:",
+},
+
+sv: {
+    flag:"🇸🇪", title:"Design", bg:"BAKGRUND (URL):", bgColor:"BAKGRUNDSFÄRG:", useGradient:"Gradient",
+    gradient:"ANDRA FÄRG:", resetBg:"Ta bort bild", file:"🖼️ Lokal bild",
+    browse:"Bläddra", opacity:"OPACITET:", radius:"RUNDNING:", text:"TEXT:", accent:"ACCENT:",
+    music:"MUSIK (Fil/URL):", vol:"VOLYM:", playing:"▶️ Spelar", paused:"⏸ Pausad",
+    localMusic:"🎵 Lokal fil", font:"TYPSNITT:", customFont:"Eget typsnitt (Google Fonts):",
+    customFontPlaceholder:"T.ex.: Nunito, Lobster...", findFont:"Hitta typsnitt på",
+    exportTheme:"📥 Exportera", importTheme:"📤 Importera", musicStatus:"MUSIK:",
+    removeMusic:"🗑️ Ta bort musik", symbolTheme:"SYMBOLTEMA:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Effekter", tabProfile:"👤 Profil",
+    fxBlood:"Blod", fxGlitter:"Glitter", fxRain:"Regn",
+    fxDust:"Damm", fxFireflies:"Ljuseffekter", fxColor:"Färg", fxIntensity:"Intensitet", fxSpeed:"Hastighet",
+    profFrame:"Rambåge:", profFrameNone:"Ingen",
+    profFrameRound:"Cirkel", profFrameSquare:"Fyrkant", profFrameRoundedSq:"Rundad", profFrameHeart:"Hjärta", profFrameSun:"Sol", profFrameCat:"Katt",
+    profGlow:"Glöd:", profGlowNone:"Ingen", profGlowOn:"På",
+    profAvatarPos:"Avatarposition:", profPosLeft:"Vänster", profPosCenter:"Mitten", profPosRight:"Höger",
+    profSave:"💾 Spara", profNote:"⚠️ Ändringar syns bara för dig",
+    symCustomLabel:"✏️ Eget tema", symCustomName:"Temanamn:", symCustomNamePh:"T.ex.: Mitt tema",
+    symCustomSave:"💾 Spara tema", symCustomSaved:"✅ Sparat!", symShowAll:"Alla symboler",
+    symHint:"Hitta emoji:",
+},
+
+cs: {
+    flag:"🇨🇿", title:"Design", bg:"POZADÍ (URL):", bgColor:"BARVA POZADÍ:", useGradient:"Přechod",
+    gradient:"DRUHÁ BARVA:", resetBg:"Odstranit obrázek", file:"🖼️ Lokální obrázek",
+    browse:"Procházet", opacity:"PRŮHLEDNOST:", radius:"ZAOBLENÍ:", text:"TEXT:", accent:"AKCENT:",
+    music:"HUDBA (Soubor/URL):", vol:"HLASITOST:", playing:"▶️ Přehrávání", paused:"⏸ Pozastaveno",
+    localMusic:"🎵 Lokální soubor", font:"PÍSMO:", customFont:"Vlastní písmo (Google Fonts):",
+    customFontPlaceholder:"Např.: Nunito, Lobster...", findFont:"Najít písmo na",
+    exportTheme:"📥 Export", importTheme:"📤 Import", musicStatus:"HUDBA:",
+    removeMusic:"🗑️ Odstranit hudbu", symbolTheme:"TÉMA SYMBOLŮ:",
+    tabDesign:"🎨 Design", tabEffects:"✨ Efekty", tabProfile:"👤 Profil",
+    fxBlood:"Krev", fxGlitter:"Třpytky", fxRain:"Déšť",
+    fxDust:"Prach", fxFireflies:"Světlušky", fxColor:"Barva", fxIntensity:"Intenzita", fxSpeed:"Rychlost",
+    profFrame:"Tvar rámečku:", profFrameNone:"Žádný",
+    profFrameRound:"Kruh", profFrameSquare:"Čtverec", profFrameRoundedSq:"Zaoblený", profFrameHeart:"Srdce", profFrameSun:"Slunce", profFrameCat:"Kočka",
+    profGlow:"Záře:", profGlowNone:"Žádná", profGlowOn:"Zapnuto",
+    profAvatarPos:"Pozice avatara:", profPosLeft:"Vlevo", profPosCenter:"Uprostřed", profPosRight:"Vpravo",
+    profSave:"💾 Uložit", profNote:"⚠️ Změny viditelné jen pro vás",
+    symCustomLabel:"✏️ Vlastní téma", symCustomName:"Název tématu:", symCustomNamePh:"Např.: Můj motiv",
+    symCustomSave:"💾 Uložit téma", symCustomSaved:"✅ Uloženo!", symShowAll:"Všechny symboly",
+    symHint:"Najít emoji:",
+},
+
+el: {
+    flag:"🇬🇷", title:"Σχέδιο", bg:"ΦΟΝΤΟ (URL):", bgColor:"ΧΡΩΜΑ ΦΟΝΤΟΥ:", useGradient:"Διαβάθμιση",
+    gradient:"ΔΕΥΤΕΡΟ ΧΡΩΜΑ:", resetBg:"Αφαίρεση εικόνας", file:"🖼️ Τοπική εικόνα",
+    browse:"Περιήγηση", opacity:"ΔΙΑΦΑΝΕΙΑ:", radius:"ΣΤΡΟΓΓΥΛΕΜΑ:", text:"ΚΕΙΜΕΝΟ:", accent:"ΤΟΝΙΣΜΟΣ:",
+    music:"ΜΟΥΣΙΚΗ (Αρχείο/URL):", vol:"ΕΝΤΑΣΗ:", playing:"▶️ Αναπαραγωγή", paused:"⏸ Παύση",
+    localMusic:"🎵 Τοπικό αρχείο", font:"ΓΡΑΜΜΑΤΟΣΕΙΡΑ:", customFont:"Προσαρμοσμένη γραμματοσειρά (Google Fonts):",
+    customFontPlaceholder:"Π.χ.: Nunito, Lobster...", findFont:"Βρες γραμματοσειρά στο",
+    exportTheme:"📥 Εξαγωγή", importTheme:"📤 Εισαγωγή", musicStatus:"ΜΟΥΣΙΚΗ:",
+    removeMusic:"🗑️ Αφαίρεση μουσικής", symbolTheme:"ΘΕΜΑ ΣΥΜΒΟΛΩΝ:",
+    tabDesign:"🎨 Σχέδιο", tabEffects:"✨ Εφέ", tabProfile:"👤 Προφίλ",
+    fxBlood:"Αίμα", fxGlitter:"Γκλίτερ", fxRain:"Βροχή",
+    fxDust:"Σκόνη", fxFireflies:"Πυγολαμπίδες", fxColor:"Χρώμα", fxIntensity:"Ένταση", fxSpeed:"Ταχύτητα",
+    profFrame:"Σχήμα πλαισίου:", profFrameNone:"Κανένα",
+    profFrameRound:"Κύκλος", profFrameSquare:"Τετράγωνο", profFrameRoundedSq:"Στρογγυλεμένο", profFrameHeart:"Καρδιά", profFrameSun:"Ήλιος", profFrameCat:"Γάτα",
+    profGlow:"Λάμψη:", profGlowNone:"Καμία", profGlowOn:"Ενεργή",
+    profAvatarPos:"Θέση avatar:", profPosLeft:"Αριστερά", profPosCenter:"Κέντρο", profPosRight:"Δεξιά",
+    profSave:"💾 Αποθήκευση", profNote:"⚠️ Οι αλλαγές φαίνονται μόνο σε εσάς",
+    symCustomLabel:"✏️ Προσαρμοσμένο θέμα", symCustomName:"Όνομα θέματος:", symCustomNamePh:"Π.χ.: Το θέμα μου",
+    symCustomSave:"💾 Αποθήκευση θέματος", symCustomSaved:"✅ Αποθηκεύτηκε!", symShowAll:"Όλα τα σύμβολα",
+    symHint:"Βρες emoji:",
+},
+
+ja: {
+    flag:"🇯🇵", title:"デザイン", bg:"背景（URL）:", bgColor:"背景色:", useGradient:"グラデーション",
+    gradient:"2色目:", resetBg:"画像を削除", file:"🖼️ ローカル画像",
+    browse:"参照", opacity:"不透明度:", radius:"角丸:", text:"テキスト:", accent:"アクセント:",
+    music:"音楽（ファイル/URL）:", vol:"音量:", playing:"▶️ 再生中", paused:"⏸ 一時停止",
+    localMusic:"🎵 ローカルファイル", font:"フォント:", customFont:"カスタムフォント（Google Fonts）:",
+    customFontPlaceholder:"例: Nunito, Lobster...", findFont:"フォント検索",
+    exportTheme:"📥 エクスポート", importTheme:"📤 インポート", musicStatus:"音楽:",
+    removeMusic:"🗑️ 音楽削除", symbolTheme:"シンボルテーマ:",
+    tabDesign:"🎨 デザイン", tabEffects:"✨ エフェクト", tabProfile:"👤 プロフィール",
+    fxBlood:"血", fxGlitter:"キラキラ", fxRain:"雨",
+    fxDust:"埃", fxFireflies:"蛍", fxColor:"色", fxIntensity:"強さ", fxSpeed:"速度",
+    profFrame:"フレーム形状:", profFrameNone:"なし",
+    profFrameRound:"円", profFrameSquare:"四角", profFrameRoundedSq:"角丸", profFrameHeart:"ハート", profFrameSun:"太陽", profFrameCat:"猫",
+    profGlow:"発光:", profGlowNone:"なし", profGlowOn:"オン",
+    profAvatarPos:"アバター位置:", profPosLeft:"左", profPosCenter:"中央", profPosRight:"右",
+    profSave:"💾 保存", profNote:"⚠️ 変更は自分にのみ表示",
+    symCustomLabel:"✏️ カスタムテーマ", symCustomName:"テーマ名:", symCustomNamePh:"例: マイテーマ",
+    symCustomSave:"💾 テーマ保存", symCustomSaved:"✅ 保存済み！", symShowAll:"すべてのシンボル",
+    symHint:"絵文字検索:",
+},
+
+zh: {
+    flag:"🇨🇳", title:"设计", bg:"背景（URL）:", bgColor:"背景颜色:", useGradient:"渐变",
+    gradient:"第二种颜色:", resetBg:"移除图片", file:"🖼️ 本地图片",
+    browse:"浏览", opacity:"不透明度:", radius:"圆角:", text:"文本:", accent:"强调色:",
+    music:"音乐（文件/URL）:", vol:"音量:", playing:"▶️ 播放中", paused:"⏸ 已暂停",
+    localMusic:"🎵 本地文件", font:"字体:", customFont:"自定义字体（Google Fonts）:",
+    customFontPlaceholder:"例如：Nunito, Lobster...", findFont:"查找字体",
+    exportTheme:"📥 导出", importTheme:"📤 导入", musicStatus:"音乐:",
+    removeMusic:"🗑️ 删除音乐", symbolTheme:"符号主题:",
+    tabDesign:"🎨 设计", tabEffects:"✨ 效果", tabProfile:"👤 个人资料",
+    fxBlood:"血液", fxGlitter:"闪光", fxRain:"雨",
+    fxDust:"灰尘", fxFireflies:"萤火虫", fxColor:"颜色", fxIntensity:"强度", fxSpeed:"速度",
+    profFrame:"边框形状:", profFrameNone:"无",
+    profFrameRound:"圆形", profFrameSquare:"方形", profFrameRoundedSq:"圆角", profFrameHeart:"爱心", profFrameSun:"太阳", profFrameCat:"猫",
+    profGlow:"发光:", profGlowNone:"无", profGlowOn:"开启",
+    profAvatarPos:"头像位置:", profPosLeft:"左", profPosCenter:"中", profPosRight:"右",
+    profSave:"💾 保存", profNote:"⚠️ 更改仅自己可见",
+    symCustomLabel:"✏️ 自定义主题", symCustomName:"主题名称:", symCustomNamePh:"例如：我的主题",
+    symCustomSave:"💾 保存主题", symCustomSaved:"✅ 已保存！", symShowAll:"所有符号",
+    symHint:"查找表情:",
+},
+
+ko: {
+    flag:"🇰🇷", title:"디자인", bg:"배경 (URL):", bgColor:"배경 색상:", useGradient:"그라디언트",
+    gradient:"두 번째 색상:", resetBg:"이미지 제거", file:"🖼️ 로컬 이미지",
+    browse:"찾아보기", opacity:"투명도:", radius:"둥글기:", text:"텍스트:", accent:"강조색:",
+    music:"음악 (파일/URL):", vol:"볼륨:", playing:"▶️ 재생 중", paused:"⏸ 일시정지",
+    localMusic:"🎵 로컬 파일", font:"폰트:", customFont:"사용자 폰트 (Google Fonts):",
+    customFontPlaceholder:"예: Nunito, Lobster...", findFont:"폰트 찾기",
+    exportTheme:"📥 내보내기", importTheme:"📤 가져오기", musicStatus:"음악:",
+    removeMusic:"🗑️ 음악 제거", symbolTheme:"심볼 테마:",
+    tabDesign:"🎨 디자인", tabEffects:"✨ 효과", tabProfile:"👤 프로필",
+    fxBlood:"피", fxGlitter:"반짝임", fxRain:"비",
+    fxDust:"먼지", fxFireflies:"반딧불이", fxColor:"색상", fxIntensity:"강도", fxSpeed:"속도",
+    profFrame:"프레임 모양:", profFrameNone:"없음",
+    profFrameRound:"원형", profFrameSquare:"사각형", profFrameRoundedSq:"둥근 사각형", profFrameHeart:"하트", profFrameSun:"태양", profFrameCat:"고양이",
+    profGlow:"빛 효과:", profGlowNone:"없음", profGlowOn:"켜짐",
+    profAvatarPos:"아바타 위치:", profPosLeft:"왼쪽", profPosCenter:"가운데", profPosRight:"오른쪽",
+    profSave:"💾 저장", profNote:"⚠️ 변경 사항은 본인에게만 표시됨",
+    symCustomLabel:"✏️ 사용자 테마", symCustomName:"테마 이름:", symCustomNamePh:"예: 내 테마",
+    symCustomSave:"💾 테마 저장", symCustomSaved:"✅ 저장됨!", symShowAll:"모든 심볼",
+    symHint:"이모지 찾기:",
+},
+
+th: {
+    flag:"🇹🇭", title:"การออกแบบ", bg:"พื้นหลัง (URL):", bgColor:"สีพื้นหลัง:", useGradient:"ไล่สี",
+    gradient:"สีที่สอง:", resetBg:"ลบรูปภาพ", file:"🖼️ ไฟล์ในเครื่อง",
+    browse:"เลือก", opacity:"ความโปร่งใส:", radius:"ความโค้ง:", text:"ข้อความ:", accent:"สีเน้น:",
+    music:"เพลง (ไฟล์/URL):", vol:"ระดับเสียง:", playing:"▶️ กำลังเล่น", paused:"⏸ หยุดชั่วคราว",
+    localMusic:"🎵 ไฟล์ในเครื่อง", font:"ฟอนต์:", customFont:"ฟอนต์กำหนดเอง (Google Fonts):",
+    customFontPlaceholder:"เช่น: Nunito, Lobster...", findFont:"ค้นหาฟอนต์",
+    exportTheme:"📥 ส่งออก", importTheme:"📤 นำเข้า", musicStatus:"เพลง:",
+    removeMusic:"🗑️ ลบเพลง", symbolTheme:"ธีมสัญลักษณ์:",
+    tabDesign:"🎨 ออกแบบ", tabEffects:"✨ เอฟเฟกต์", tabProfile:"👤 โปรไฟล์",
+    fxBlood:"เลือด", fxGlitter:"วิบวับ", fxRain:"ฝน",
+    fxDust:"ฝุ่น", fxFireflies:"หิ่งห้อย", fxColor:"สี", fxIntensity:"ความเข้ม", fxSpeed:"ความเร็ว",
+    profFrame:"รูปแบบกรอบ:", profFrameNone:"ไม่มี",
+    profFrameRound:"วงกลม", profFrameSquare:"สี่เหลี่ยม", profFrameRoundedSq:"มุมโค้ง", profFrameHeart:"หัวใจ", profFrameSun:"ดวงอาทิตย์", profFrameCat:"แมว",
+    profGlow:"เรืองแสง:", profGlowNone:"ไม่มี", profGlowOn:"เปิด",
+    profAvatarPos:"ตำแหน่งอวาตาร์:", profPosLeft:"ซ้าย", profPosCenter:"กลาง", profPosRight:"ขวา",
+    profSave:"💾 บันทึก", profNote:"⚠️ การเปลี่ยนแปลงเห็นได้เฉพาะคุณ",
+    symCustomLabel:"✏️ ธีมกำหนดเอง", symCustomName:"ชื่อธีม:", symCustomNamePh:"เช่น: ธีมของฉัน",
+    symCustomSave:"💾 บันทึกธีม", symCustomSaved:"✅ บันทึกแล้ว!", symShowAll:"สัญลักษณ์ทั้งหมด",
+    symHint:"ค้นหาอีโมจิ:",
+},
+
+vi: {
+    flag:"🇻🇳", title:"Thiết kế", bg:"NỀN (URL):", bgColor:"MÀU NỀN:", useGradient:"Chuyển màu",
+    gradient:"MÀU THỨ HAI:", resetBg:"Xóa ảnh", file:"🖼️ Ảnh cục bộ",
+    browse:"Duyệt", opacity:"ĐỘ MỜ:", radius:"ĐỘ BO TRÒN:", text:"VĂN BẢN:", accent:"NHẤN MẠNH:",
+    music:"NHẠC (File/URL):", vol:"ÂM LƯỢNG:", playing:"▶️ Đang phát", paused:"⏸ Tạm dừng",
+    localMusic:"🎵 File cục bộ", font:"FONT:", customFont:"Font tùy chỉnh (Google Fonts):",
+    customFontPlaceholder:"VD: Nunito, Lobster...", findFont:"Tìm font trên",
+    exportTheme:"📥 Xuất", importTheme:"📤 Nhập", musicStatus:"NHẠC:",
+    removeMusic:"🗑️ Xóa nhạc", symbolTheme:"CHỦ ĐỀ KÝ HIỆU:",
+    tabDesign:"🎨 Thiết kế", tabEffects:"✨ Hiệu ứng", tabProfile:"👤 Hồ sơ",
+    fxBlood:"Máu", fxGlitter:"Lấp lánh", fxRain:"Mưa",
+    fxDust:"Bụi", fxFireflies:"Đom đóm", fxColor:"Màu", fxIntensity:"Cường độ", fxSpeed:"Tốc độ",
+    profFrame:"Kiểu khung:", profFrameNone:"Không",
+    profFrameRound:"Tròn", profFrameSquare:"Vuông", profFrameRoundedSq:"Bo tròn", profFrameHeart:"Trái tim", profFrameSun:"Mặt trời", profFrameCat:"Mèo",
+    profGlow:"Phát sáng:", profGlowNone:"Không", profGlowOn:"Bật",
+    profAvatarPos:"Vị trí avatar:", profPosLeft:"Trái", profPosCenter:"Giữa", profPosRight:"Phải",
+    profSave:"💾 Lưu", profNote:"⚠️ Thay đổi chỉ hiển thị cho bạn",
+    symCustomLabel:"✏️ Chủ đề tùy chỉnh", symCustomName:"Tên chủ đề:", symCustomNamePh:"VD: Chủ đề của tôi",
+    symCustomSave:"💾 Lưu chủ đề", symCustomSaved:"✅ Đã lưu!", symShowAll:"Tất cả ký hiệu",
+    symHint:"Tìm emoji:",
+},
+
+ar: {
+    flag:"🇸🇦", title:"تصميم", bg:"الخلفية (URL):", bgColor:"لون الخلفية:", useGradient:"تدرج",
+    gradient:"اللون الثاني:", resetBg:"إزالة الصورة", file:"🖼️ صورة محلية",
+    browse:"تصفح", opacity:"الشفافية:", radius:"الاستدارة:", text:"النص:", accent:"اللون المميز:",
+    music:"الموسيقى (ملف/رابط):", vol:"مستوى الصوت:", playing:"▶️ تشغيل", paused:"⏸ متوقف",
+    localMusic:"🎵 ملف محلي", font:"الخط:", customFont:"خط مخصص (Google Fonts):",
+    customFontPlaceholder:"مثال: Nunito, Lobster...", findFont:"ابحث عن خط في",
+    exportTheme:"📥 تصدير", importTheme:"📤 استيراد", musicStatus:"الموسيقى:",
+    removeMusic:"🗑️ إزالة الموسيقى", symbolTheme:"نمط الرموز:",
+    tabDesign:"🎨 التصميم", tabEffects:"✨ التأثيرات", tabProfile:"👤 الملف",
+    fxBlood:"دم", fxGlitter:"لمعان", fxRain:"مطر",
+    fxDust:"غبار", fxFireflies:"يراعات", fxColor:"لون", fxIntensity:"شدة", fxSpeed:"سرعة",
+    profFrame:"شكل الإطار:", profFrameNone:"لا شيء",
+    profFrameRound:"دائرة", profFrameSquare:"مربع", profFrameRoundedSq:"مستدير", profFrameHeart:"قلب", profFrameSun:"شمس", profFrameCat:"قط",
+    profGlow:"توهج:", profGlowNone:"لا يوجد", profGlowOn:"تشغيل",
+    profAvatarPos:"موضع الصورة:", profPosLeft:"يسار", profPosCenter:"وسط", profPosRight:"يمين",
+    profSave:"💾 حفظ", profNote:"⚠️ التغييرات مرئية لك فقط",
+    symCustomLabel:"✏️ سمة مخصصة", symCustomName:"اسم السمة:", symCustomNamePh:"مثال: سمتي",
+    symCustomSave:"💾 حفظ السمة", symCustomSaved:"✅ تم الحفظ!", symShowAll:"كل الرموز",
+    symHint:"ابحث عن إيموجي:",},
+    };
+    Object.keys(i18n).forEach(lang => {
+        if (lang === 'en') return;
+        Object.keys(i18n.en).forEach(key => { if (!(key in i18n[lang])) i18n[lang][key] = i18n.en[key]; });
+    });
+
+    const fontList = ["Default","Roboto","Montserrat","Open Sans","Playfair Display","Oswald","Pacifico","Caveat","Kelly Slab"];
+
+    // ─── STATE ──────────────────────────────────────────────────────────────────
+    let userLang = GM_getValue('lang', navigator.language.slice(0,2));
     if (!i18n[userLang]) userLang = 'uk';
+
+    const DEFAULT_EFFECTS = {
+        blood:     { on:false, color:'#8b0000', speed:1 },
+        glitter:   { on:false, color:'#ffd700', intensity:0.6 },
+        rain:      { on:false, color:'#88aaff', speed:1 },
+        dust:      { on:false, color:'#ccbbaa', intensity:0.4 },
+        fireflies: { on:false, color:'#aaff44', speed:0.6 },
+    };
+    // FIX 1: Removed separatePos, namePos, descPos — avatar/name/bio always move together
+    const DEFAULT_PROFILE = {
+        frame:'none', glow:false, pos:'left',
+        moveNameDesc: false
+    };
+
+    const savedEffects = getObj('effects', {});
+    const savedProfile = getObj('profile', {});
+    const savedCustomSymThemes = getObj('customSymThemes', []);
 
     let config = {
         bg:            GM_getValue('bg', ''),
@@ -63,10 +832,13 @@
         font:          GM_getValue('font', 'Default'),
         customFont:    GM_getValue('customFont', ''),
         menuDark:      GM_getValue('menuDark', false),
+        symbolTheme:   GM_getValue('symbolTheme', 'none'),
+        customSymMap:  getObj('customSymMap', {}),
+        effects: Object.fromEntries(Object.keys(DEFAULT_EFFECTS).map(k => [k, { ...DEFAULT_EFFECTS[k], ...(savedEffects[k] || {}) }])),
+        profile: { ...DEFAULT_PROFILE, ...savedProfile },
     };
 
-    // --- HELPERS ---
-    const $ = id => document.getElementById(id);
+    let customSymThemes = savedCustomSymThemes;
 
     const saveConfig = () => {
         GM_setValue('bg',            config.bg);
@@ -83,323 +855,894 @@
         GM_setValue('customFont',    config.customFont);
         GM_setValue('music',         config.music);
         GM_setValue('menuDark',      config.menuDark);
-    };
-
-    const fetchImageAsBase64 = (url, onSuccess, onFail) => {
-        GM_xmlhttpRequest({
-            method: 'GET', url, responseType: 'blob',
-            onload: ({ response }) => {
-                const reader = new FileReader();
-                reader.onload = e => onSuccess(e.target.result);
-                reader.readAsDataURL(response);
-            },
-            onerror: onFail
-        });
+        GM_setValue('symbolTheme',   config.symbolTheme);
+        setObj('effects',          config.effects);
+        setObj('profile',          config.profile);
+        setObj('customSymMap',     config.customSymMap);
+        setObj('customSymThemes',  customSymThemes);
     };
 
     const menuTheme = () => config.menuDark
-        ? { bg: '#1e1e2e', surface: '#181825', border: '#313244', text: '#cdd6f4', subtext: '#a6adc8', inputBg: '#313244', inputBorder: '#45475a', btnBg: '#313244', btnHover: '#45475a' }
-        : { bg: '#ffffff', surface: '#fafafa', border: '#e0e0e0', text: '#333333', subtext: '#777777', inputBg: '#ffffff', inputBorder: '#cccccc', btnBg: '#f0f0f0', btnHover: '#e4e4e4' };
+        ? { bg:'#1e1e2e', surface:'#181825', border:'#313244', text:'#cdd6f4', sub:'#a6adc8', inputBg:'#313244', inputBorder:'#45475a', btnBg:'#313244', btnHover:'#45475a' }
+        : { bg:'#ffffff', surface:'#fafafa', border:'#e0e0e0', text:'#333333', sub:'#777777', inputBg:'#ffffff', inputBorder:'#cccccc', btnBg:'#f0f0f0', btnHover:'#e4e4e4' };
 
-    // --- STYLES ---
+    // ─── SYMBOL THEMES APPLICATION ───────────────────────────────────────────────
+    const getActiveSymbolMap = () => {
+        if (config.symbolTheme === '__custom__') return config.customSymMap || {};
+        const found = customSymThemes.find(t => t.id === config.symbolTheme);
+        if (found) return found.map;
+        return (SYMBOL_THEMES[config.symbolTheme] || SYMBOL_THEMES.none).map;
+    };
+
+    const applySymbolTheme = () => {
+        const map = getActiveSymbolMap();
+        if (!Object.keys(map).length) return;
+        document.querySelectorAll('.lite-action-icon, .lite-icon').forEach(el => {
+            const txt = el.textContent.trim();
+            if (map[txt]) el.textContent = map[txt];
+        });
+    };
+
+    // ─── AVATAR CLIP PATHS (SVG-based shapes) ───────────────────────────────────
+    const getAvatarShapeStyle = (frame) => {
+        switch(frame) {
+            case 'round':     return 'border-radius:50% !important;clip-path:circle(50% at 50% 50%) !important;';
+            case 'square':    return 'border-radius:0 !important;clip-path:inset(0% round 0px) !important;';
+            case 'roundedSq': return 'border-radius:18px !important;clip-path:inset(0% round 18px) !important;';
+            case 'heart':     return `clip-path:url(#bliish-heart-clip) !important;border-radius:0 !important;`;
+            case 'sun':       return `clip-path:url(#bliish-sun-clip) !important;border-radius:0 !important;`;
+            case 'cat':       return `clip-path:url(#bliish-cat-clip) !important;border-radius:0 !important;`;
+            default:          return '';
+        }
+    };
+
+    // Inject SVG defs for clip paths
+    const injectSvgClips = () => {
+        let svgEl = document.getElementById('bliish-svg-clips');
+        if (svgEl) return;
+        svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        svgEl.id = 'bliish-svg-clips';
+        svgEl.setAttribute('width','0');
+        svgEl.setAttribute('height','0');
+        svgEl.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
+        svgEl.innerHTML = `<defs>
+            <!-- Heart -->
+            <clipPath id="bliish-heart-clip" clipPathUnits="objectBoundingBox">
+                <path d="M0.5,0.9 C0.5,0.9 0,0.55 0,0.3 A0.25,0.25,0,0,1,0.5,0.2 A0.25,0.25,0,0,1,1,0.3 C1,0.55 0.5,0.9 0.5,0.9 Z"/>
+            </clipPath>
+            <!-- Sun (circle with rays via polygon) -->
+            <clipPath id="bliish-sun-clip" clipPathUnits="objectBoundingBox">
+                <polygon points="
+                    0.50,0.00 0.56,0.17 0.70,0.07 0.67,0.24 0.85,0.22 0.76,0.36
+                    0.95,0.41 0.82,0.50 0.95,0.59 0.76,0.64 0.85,0.78 0.67,0.76
+                    0.70,0.93 0.56,0.83 0.50,1.00 0.44,0.83 0.30,0.93 0.33,0.76
+                    0.15,0.78 0.24,0.64 0.05,0.59 0.18,0.50 0.05,0.41 0.24,0.36
+                    0.15,0.22 0.33,0.24 0.30,0.07 0.44,0.17"/>
+            </clipPath>
+            <!-- Cat (circle + two triangle ears) -->
+            <clipPath id="bliish-cat-clip" clipPathUnits="objectBoundingBox">
+                <path d="M0.18,0.38 L0.10,0.05 L0.35,0.28
+                         A0.32,0.32,0 0,1,0.50,0.24
+                         A0.32,0.32,0 0,1,0.65,0.28
+                         L0.90,0.05 L0.82,0.38
+                         A0.35,0.35,0 0,1,0.85,0.55
+                         A0.35,0.35,0 1,1,0.15,0.55
+                         A0.35,0.35,0 0,1,0.18,0.38 Z"/>
+            </clipPath>
+        </defs>`;
+        document.body.appendChild(svgEl);
+    };
+
+    // ─── STYLES ─────────────────────────────────────────────────────────────────
     const applyStyles = () => {
         let tag = $('custom-styles') || document.createElement('style');
         tag.id = 'custom-styles';
         document.head.appendChild(tag);
 
         const activeFont = config.customFont || (config.font !== 'Default' ? config.font : '');
-        const fontImport = activeFont ? `@import url('https://fonts.googleapis.com/css2?family=${activeFont.replace(/ /g, '+')}&display=swap');` : '';
-        const fontFamily = activeFont ? `font-family: '${activeFont}', sans-serif !important;` : '';
+        const fontImport = activeFont ? `@import url('https://fonts.googleapis.com/css2?family=${activeFont.replace(/ /g,'+')}:wght@400;700&display=swap');` : '';
+        const fontFamily = activeFont ? `font-family:'${activeFont}',sans-serif !important;` : '';
 
         const bgUrl = config.bg?.trim();
-        const backgroundStyle = bgUrl
-            ? `background: url("${bgUrl}") no-repeat center center fixed !important; background-size: cover !important;`
+        const bgStyle = bgUrl
+            ? `background:url("${bgUrl}") no-repeat center center fixed !important;background-size:cover !important;`
             : config.useGradient
-                ? `background: linear-gradient(135deg, ${config.bgColor}, ${config.bgGradient}) fixed !important;`
-                : `background-color: ${config.bgColor} !important;`;
+                ? `background:linear-gradient(135deg,${config.bgColor},${config.bgGradient}) fixed !important;`
+                : `background-color:${config.bgColor} !important;`;
 
         const t = menuTheme();
         const r = Number(config.radius);
         const ac = config.accentColor;
+        const prof = config.profile;
+
+        // Avatar position
+        const avatarAlign = prof.pos === 'center' ? 'center' : prof.pos === 'right' ? 'flex-end' : 'flex-start';
+
+        // Frame shape
+        const shapeStyle = getAvatarShapeStyle(prof.frame);
+
+
+        let glowStyle = '';
+        let glowWrapStyle = '';
+        if (prof.glow) {
+            glowWrapStyle = `filter:drop-shadow(0 0 8px ${ac}) drop-shadow(0 0 18px ${ac}99) !important;`;
+        }
+
+        // Name/desc alignment
+        const textAlign = prof.pos === 'center' ? 'center' : prof.pos === 'right' ? 'right' : 'left';
+
 
         tag.innerHTML = `
             ${fontImport}
-            .lite-theme-swatch, .lite-theme-label, .lite-themes, center span[onclick*="setTheme"], .lite-actions a[href*="accent="] { display: none !important; }
-            body { ${backgroundStyle} color: ${config.textColor} !important; ${fontFamily} min-height: 100vh; }
-            body::before { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,${config.bgOpacity}); z-index: -1; pointer-events: none; }
-            h1,h2,h3,h4,h5,p,li,.lite-text,.lite-comment-body,.lite-author,.lite-brand-highlight { color: ${config.textColor} !important; ${fontFamily} }
-            .lite-brand-highlight, .lite-brand { background-color: ${ac} !important; color: #fff !important; display: inline-block; }
-            .brand, .brand-name, [class*="brand"] svg, [class*="brand"] path { color: ${ac} !important; fill: ${ac} !important; }
-            .lite-button, button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn) { background-color: ${ac} !important; color: #fff !important; border: none !important; }
-            .lite-filter-row,.lite-post+.lite-post,.lite-comments-separator,.lite-comment-preview-separator,.lite-pagination,.lite-footer,.lite-composer textarea,.lite-wall-header,.lite-mention { border-color: ${ac} !important; }
-            a,.lite-author,.lite-comment-author,.lite-liked-icon { color: ${ac} !important; }
-            .lite-brand-highlight,.lite-button,button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn),
-            .lite-post,.lite-comment,.ui-input,.lite-composer,.lite-input,iframe,input,.lite-post-composer textarea { border-radius: ${r}px !important; }
+            .lite-theme-swatch,.lite-theme-label,.lite-themes,center span[onclick*="setTheme"],.lite-actions a[href*="accent="]{ display:none !important; }
+            body { ${bgStyle} color:${config.textColor} !important; ${fontFamily} min-height:100vh; }
+            body::before { content:"";position:fixed;inset:0;background:rgba(0,0,0,${config.bgOpacity});z-index:-1;pointer-events:none; }
+            h1,h2,h3,h4,h5,p,li,.lite-text,.lite-comment-body,.lite-author,.lite-brand-highlight { color:${config.textColor} !important; ${fontFamily} }
+            .lite-brand-highlight,.lite-brand { background-color:${ac} !important;color:#fff !important;display:inline-block; }
+            .brand,.brand-name,[class*="brand"] svg,[class*="brand"] path { color:${ac} !important;fill:${ac} !important; }
+            .lite-button,button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn):not(#prof-save-btn) { background-color:${ac} !important;color:#fff !important;border:none !important; }
+            .lite-filter-row,.lite-post+.lite-post,.lite-comments-separator,.lite-comment-preview-separator,.lite-pagination,.lite-footer,.lite-composer textarea,.lite-wall-header,.lite-mention { border-color:${ac} !important; }
+            a,.lite-author,.lite-comment-author,.lite-liked-icon { color:${ac} !important; }
+            .lite-brand-highlight,.lite-button,button:not(#toggle-btn):not(#stop-btn):not(#save-btn):not(.ui-btn):not(#prof-save-btn),
+            .lite-post,.lite-comment,.ui-input,.lite-composer,.lite-input,iframe,input,.lite-post-composer textarea { border-radius:${r}px !important; }
+            .tab-btn,.tab-button,.tab,.chip-row button,.chip,.sym-theme-chip {border-radius:0 !important;}
 
-            #toggle-btn { position: fixed; top: 15px; right: 15px; z-index: 10001; width: 48px; height: 48px; border: none; cursor: pointer; background: ${ac}; color: #fff; font-size: 22px; border-radius: 50%; box-shadow: 0 4px 15px rgba(0,0,0,.3); transition: .2s; }
-            #toggle-btn:hover { transform: scale(1.05); }
-            #design-menu-box { position: fixed; top: 60px; right: 20px; z-index: 10000; width: 330px; max-width: calc(100vw - 40px); max-height: calc(100vh - 80px); display: flex; flex-direction: column; box-shadow: 0 15px 45px rgba(0,0,0,.4); font-family: 'Segoe UI', Tahoma, sans-serif; border-radius: ${r}px; overflow: hidden; border: 1px solid ${t.border}; background: ${t.bg}; }
-            #design-menu-box * { color: ${t.text} !important; text-shadow: none !important; box-sizing: border-box; }
-            #menu-header { padding: 15px; border-bottom: 1px solid ${t.border}; display: flex; justify-content: space-between; align-items: center; background: ${t.surface}; flex-shrink: 0; }
-            #menu-scroll-body { overflow-y: auto; padding: 15px; flex-grow: 1; scrollbar-width: thin; background: ${t.bg}; }
-            #menu-footer { padding: 15px; border-top: 1px solid ${t.border}; background: ${t.surface}; flex-shrink: 0; }
-            .ui-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: flex-end; }
-            .ui-col { flex: 1; }
-            .ui-label { display: block; font-size: 11px; font-weight: 800; margin-bottom: 4px; color: ${t.subtext} !important; text-transform: uppercase; letter-spacing: .5px; }
-            .ui-input { width: 100%; padding: 8px; border: 1px solid ${t.inputBorder}; font-size: 13px; background: ${t.inputBg} !important; color: ${t.text} !important; outline: none; border-radius: 4px; }
-            .ui-btn { padding: 8px; border: 1px solid ${t.border}; background: ${t.btnBg} !important; color: ${t.text} !important; cursor: pointer; font-size: 11px; font-weight: 600; text-align: center; border-radius: 4px; }
-            .ui-btn:hover { background: ${t.btnHover} !important; }
-            #lang-select { font-size: 12px; border: 1px solid ${t.border}; padding: 3px 6px; border-radius: 4px; background: ${t.inputBg} !important; color: ${t.text} !important; max-width: 120px; }
-            #font-select { background: ${t.inputBg} !important; color: ${t.text} !important; }
-            #save-btn { width: 75%; height: 40px; background: ${ac} !important; color: #fff !important; border: none; font-weight: bold; cursor: pointer; font-size: 14px; border-radius: 6px; }
-            #stop-btn { width: 22%; height: 40px; background: ${config.menuDark ? '#45475a' : '#333'} !important; color: #fff !important; border: none; cursor: pointer; font-size: 16px; border-radius: 6px; }
-            #theme-toggle-btn { background: ${t.btnBg} !important; color: ${t.text} !important; border: 1px solid ${t.border}; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
-            #theme-toggle-btn:hover { background: ${t.btnHover} !important; }
-            #music-status-text { font-weight: 600; }
-            #design-menu-box input[type="range"] { accent-color: ${ac}; }
+            /* =========================
+               PROFILE LAYOUT
+            ========================= */
+
+            .lite-wall-header,
+            .lite-profile-header,
+            .lite-user-header {
+                display:flex !important;
+                flex-direction:column !important;
+                align-items:${avatarAlign} !important;
+                justify-content:flex-start !important;
+                gap:10px !important;
+            }
+
+            /* =========================
+               AVATAR
+            ========================= */
+
+            .lite-wall-avatar,
+            .lite-profile-avatar,
+            .lite-user-avatar {
+                display:flex !important;
+                width:100% !important;
+                justify-content:${avatarAlign} !important;
+                align-items:${avatarAlign} !important;
+                ${glowWrapStyle}
+                transition:filter .3s;
+            }
+
+            .lite-wall-avatar img,
+            .lite-profile-avatar img,
+            .lite-user-avatar img {
+                ${shapeStyle}
+            }
+
+            /* =========================
+               DISPLAY NAME
+            ========================= */
+
+            .lite-wall-name,
+            .lite-profile-name,
+            .lite-user-name,
+            .lite-display-name,
+            .lite-wall-username,
+            .lite-username {
+                width:100% !important;
+                display:block !important;
+                text-align:${textAlign} !important;
+            }
+
+            /* =========================
+               BIO
+            ========================= */
+
+            .lite-wall-desc,
+            .lite-wall-bio,
+            .lite-wall-about,
+            .lite-profile-bio,
+            .lite-user-bio,
+            .lite-bio {
+                width:100% !important;
+                display:block !important;
+                text-align:${textAlign} !important;
+            }
+
+
+
+            /* Toggle btn */
+            #toggle-btn { position:fixed;top:15px;right:15px;z-index:10001;width:48px;height:48px;border:none;cursor:pointer;background:${ac};color:#fff;font-size:22px;border-radius:50%;box-shadow:0 4px 15px rgba(0,0,0,.3);transition:.2s; }
+            #toggle-btn:hover { transform:scale(1.08); }
+
+            /* Menu wrapper */
+            #design-menu-box { position:fixed;top:60px;right:20px;z-index:10000;width:340px;max-width:calc(100vw - 40px);max-height:calc(100vh - 80px);display:flex;flex-direction:column;box-shadow:0 15px 45px rgba(0,0,0,.4);font-family:'Segoe UI',Tahoma,sans-serif;border-radius:${Math.max(r,6)}px;overflow:hidden;border:1px solid ${t.border};background:${t.bg}; }
+            #design-menu-box * { color:${t.text} !important;text-shadow:none !important;box-sizing:border-box; }
+            #menu-header { padding:12px 15px;border-bottom:1px solid ${t.border};display:flex;justify-content:space-between;align-items:center;background:${t.surface};flex-shrink:0; }
+
+            /* Tab bar */
+            #tab-bar { display:flex;border-bottom:1px solid ${t.border};flex-shrink:0;background:${t.surface};border-radius:0 !important; }
+            .tab-btn { flex:1;padding:9px 4px;border:none;border-radius:0 !important;background:transparent !important;color:${t.sub} !important;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;transition:.15s;letter-spacing:.3px; }
+            .tab-btn.active { color:${t.text} !important;border-bottom-color:${ac} !important;background:${t.bg} !important;border-radius:0 !important; }
+            .tab-btn:hover:not(.active) { background:${t.btnHover} !important;border-radius:0 !important; }
+
+            #menu-scroll-body { overflow-y:auto;padding:14px;flex-grow:1;scrollbar-width:thin;background:${t.bg}; }
+            #menu-footer { padding:12px 14px;border-top:1px solid ${t.border};background:${t.surface};flex-shrink:0; }
+            .ui-row { display:flex;gap:8px;margin-bottom:10px;align-items:flex-end; }
+            .ui-col { flex:1; }
+            .ui-label { display:block;font-size:10px;font-weight:800;margin-bottom:4px;color:${t.sub} !important;text-transform:uppercase;letter-spacing:.6px; }
+            .ui-input { width:100%;padding:7px 9px;border:1px solid ${t.inputBorder};font-size:13px;background:${t.inputBg} !important;color:${t.text} !important;outline:none;border-radius:5px; }
+            .ui-btn { padding:7px 10px;border:1px solid ${t.border};background:${t.btnBg} !important;color:${t.text} !important;cursor:pointer;font-size:11px;font-weight:700;text-align:center;border-radius:5px; }
+            .ui-btn:hover { background:${t.btnHover} !important; }
+            .ui-btn-danger { color:#e74c3c !important;border-color:#fcd5d5 !important; }
+            #lang-select { font-size:12px;border:1px solid ${t.border};padding:3px 5px;border-radius:4px;background:${t.inputBg} !important;color:${t.text} !important;max-width:110px; }
+            #font-select,#symbol-theme-select { background:${t.inputBg} !important;color:${t.text} !important; }
+            #save-btn { width:100%;height:38px;background:${ac} !important;color:#fff !important;border:none;font-weight:bold;cursor:pointer;font-size:13px;border-radius:6px; }
+            #stop-btn { height:38px;padding:0 14px;background:${config.menuDark?'#45475a':'#444'} !important;color:#fff !important;border:none;cursor:pointer;font-size:16px;border-radius:6px; }
+            #theme-toggle-btn { background:${t.btnBg} !important;color:${t.text} !important;border:1px solid ${t.border};border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:13px;flex-shrink:0;padding:0; }
+            #theme-toggle-btn:hover { background:${t.btnHover} !important; }
+            #design-menu-box input[type=range] { accent-color:${ac}; }
+
+            /* Effects */
+            .fx-row { display:flex;align-items:center;gap:8px;margin-bottom:9px;padding:9px 10px;border:1px solid ${t.border};border-radius:7px;background:${t.surface}; }
+            .fx-toggle { width:38px;height:21px;border-radius:11px;position:relative;cursor:pointer;border:none;transition:.2s;flex-shrink:0; }
+            .fx-toggle.on  { background:${ac} !important; }
+            .fx-toggle.off { background:${t.inputBorder} !important; }
+            .fx-toggle::after { content:'';position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s; }
+            .fx-toggle.on::after { left:19.5px; }
+            .fx-name { font-size:12px;font-weight:700;flex:1; }
+            .fx-controls { display:flex;align-items:center;gap:6px; }
+            .fx-color { width:26px;height:26px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none; }
+            .fx-slider { width:56px;cursor:pointer; }
+
+            /* Profile tab */
+            .prof-note { font-size:11px;color:#e67e22 !important;background:rgba(230,126,34,.1);padding:7px 9px;border-radius:5px;margin-bottom:12px;line-height:1.4; }
+            .chip-row { display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px; }
+            .chip { padding:4px 10px;font-size:11px;font-weight:700;border:1px solid ${t.border};border-radius:20px;cursor:pointer;background:${t.btnBg} !important;color:${t.text} !important;transition:.15s; }
+            .chip:hover { background:${t.btnHover} !important; }
+            .chip.active { background:${ac} !important;color:#fff !important;border-color:${ac} !important; }
+            #music-status-text { font-weight:700; }
+
+            /* Symbol editor */
+            .sym-row { display:flex;align-items:center;gap:6px;margin-bottom:7px; }
+            .sym-orig { font-size:18px;min-width:28px;text-align:center;flex-shrink:0; }
+            .sym-label { font-size:11px;color:${t.sub} !important;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+            .sym-input { width:70px;padding:4px 6px;border:1px solid ${t.inputBorder};border-radius:4px;font-size:16px;background:${t.inputBg} !important;color:${t.text} !important;text-align:center; }
+            .sym-theme-chip { padding:3px 9px;font-size:11px;font-weight:700;border:1px solid ${t.border};border-radius:20px;cursor:pointer;background:${t.btnBg} !important;color:${t.text} !important;transition:.15s;white-space:nowrap; }
+            .sym-theme-chip.active { background:${ac} !important;color:#fff !important;border-color:${ac} !important; }
+            .sym-theme-chip:hover:not(.active) { background:${t.btnHover} !important; }
+            #sym-theme-scroller { display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:thin; }
+            .sym-divider { border:none;border-top:1px solid ${t.border};margin:10px 0; }
+            #sym-save-feedback { font-size:11px;color:#27ae60 !important;font-weight:700;display:none;margin-top:4px; }
+
+            /* Profile section divider */
+            .prof-divider { border:none;border-top:1px solid ${t.border};margin:12px 0 10px; }
         `;
     };
 
-    // --- MUSIC STATUS ---
     const updateMusicStatus = () => {
         const el = $('music-status-text');
         if (!el || !window.audioPl) return;
         const cur = i18n[userLang];
         el.textContent = window.audioPl.paused ? cur.paused : cur.playing;
-        el.style.color = window.audioPl.paused ? '#e74c3c' : '#27ae60';
+        el.style.color  = window.audioPl.paused ? '#e74c3c' : '#27ae60';
     };
 
-    // --- MENU HTML ---
+    // ─── EFFECTS ENGINE ─────────────────────────────────────────────────────────
+    let fxCanvas, fxCtx;
+    const P = { rain:[], dust:[], glitter:[], fireflies:[] };
+
+    const initParticles = () => {
+        const W = window.innerWidth, H = window.innerHeight;
+        P.rain      = Array.from({length:130}, () => ({ x:Math.random()*W, y:Math.random()*H, speed:7+Math.random()*8, len:14+Math.random()*20 }));
+        P.dust      = Array.from({length:80},  () => ({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*.5, vy:-Math.random()*.4-.1, size:1+Math.random()*2.5, life:Math.random() }));
+        P.glitter   = Array.from({length:70},  () => ({ x:Math.random()*W, y:Math.random()*H, size:1+Math.random()*3.5, phase:Math.random()*Math.PI*2 }));
+        P.fireflies = Array.from({length:35},  () => ({ x:Math.random()*W, y:Math.random()*H, vx:(Math.random()-.5)*1.2, vy:(Math.random()-.5)*1.2, glow:Math.random(), glowDir:Math.random()<.5?1:-1, size:2+Math.random()*3 }));
+    };
+
+    const setupCanvas = () => {
+        fxCanvas = document.createElement('canvas');
+        fxCanvas.id = 'fx-canvas';
+        fxCanvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9997;';
+        fxCanvas.width = window.innerWidth; fxCanvas.height = window.innerHeight;
+        document.body.appendChild(fxCanvas);
+        fxCtx = fxCanvas.getContext('2d');
+        window.addEventListener('resize', () => {
+            fxCanvas.width = window.innerWidth; fxCanvas.height = window.innerHeight;
+            initParticles();
+        });
+        initParticles();
+    };
+
+    const fxLoop = () => {
+        const W = fxCanvas.width, H = fxCanvas.height;
+        fxCtx.clearRect(0,0,W,H);
+        const fx = config.effects;
+
+        if (fx.rain.on) {
+            const spd = fx.rain.speed * 2.2;
+            const rgb = hexToRgb(fx.rain.color);
+            fxCtx.strokeStyle = `rgba(${rgb},.65)`;
+            fxCtx.lineWidth = 1;
+            P.rain.forEach(p => {
+                p.y += p.speed * spd;
+                if (p.y > H + p.len) { p.y = -p.len; p.x = Math.random()*W; }
+                fxCtx.beginPath(); fxCtx.moveTo(p.x, p.y); fxCtx.lineTo(p.x - 1.5, p.y + p.len); fxCtx.stroke();
+            });
+        }
+
+        if (fx.dust.on) {
+            const rgb = hexToRgb(fx.dust.color);
+            P.dust.forEach(p => {
+                p.x += p.vx; p.y += p.vy; p.life += .0025;
+                if (p.y < -10 || p.x < -10 || p.x > W+10) { p.x = Math.random()*W; p.y = H+5; p.life = 0; }
+                const a = Math.min(1, Math.sin(p.life * Math.PI) * fx.dust.intensity * .8);
+                if (a <= 0) return;
+                fxCtx.fillStyle = `rgba(${rgb},${a})`;
+                fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2); fxCtx.fill();
+            });
+        }
+
+        if (fx.glitter.on) {
+            const rgb = hexToRgb(fx.glitter.color);
+            P.glitter.forEach(p => {
+                p.phase += .055;
+                const a = (Math.sin(p.phase)*.5+.5) * fx.glitter.intensity;
+                if (a < .04 && Math.random() < .02) { p.x = Math.random()*W; p.y = Math.random()*H; }
+                const s = p.size * (.5 + Math.sin(p.phase)*.5);
+                fxCtx.save();
+                fxCtx.globalAlpha = a;
+                fxCtx.shadowColor = `rgba(${rgb},${a})`; fxCtx.shadowBlur = 8;
+                fxCtx.fillStyle = `rgba(${rgb},1)`;
+                fxCtx.strokeStyle = `rgba(${rgb},1)`; fxCtx.lineWidth = 1;
+                [0, Math.PI/2, Math.PI, Math.PI*1.5].forEach(ang => {
+                    fxCtx.beginPath(); fxCtx.moveTo(p.x, p.y); fxCtx.lineTo(p.x + Math.cos(ang+p.phase*.15)*s*3.5, p.y + Math.sin(ang+p.phase*.15)*s*3.5); fxCtx.stroke();
+                });
+                fxCtx.beginPath(); fxCtx.arc(p.x, p.y, s*.7, 0, Math.PI*2); fxCtx.fill();
+                fxCtx.restore();
+            });
+        }
+
+        if (fx.fireflies.on) {
+            const spd = fx.fireflies.speed;
+            const rgb = hexToRgb(fx.fireflies.color);
+            P.fireflies.forEach(p => {
+                p.x += p.vx * spd; p.y += p.vy * spd;
+                p.glow += p.glowDir * .018;
+                if (p.glow >= 1 || p.glow <= 0) p.glowDir *= -1;
+                if (p.x < 0 || p.x > W) p.vx *= -1;
+                if (p.y < 0 || p.y > H) p.vy *= -1;
+                p.vx += (Math.random()-.5)*.04; p.vy += (Math.random()-.5)*.04;
+                p.vx = Math.max(-1.8, Math.min(1.8, p.vx)); p.vy = Math.max(-1.8, Math.min(1.8, p.vy));
+                const a = .35 + p.glow * .65;
+                fxCtx.save();
+                fxCtx.shadowColor = `rgba(${rgb},${a})`; fxCtx.shadowBlur = 14 * p.glow;
+                fxCtx.fillStyle = `rgba(${rgb},${a})`;
+                fxCtx.beginPath(); fxCtx.arc(p.x, p.y, p.size*(.4+p.glow*.6), 0, Math.PI*2); fxCtx.fill();
+                fxCtx.restore();
+            });
+        }
+
+        window._bliishFxId = requestAnimationFrame(fxLoop);
+    };
+
+    const setupBlood = () => {
+        let el = $('blood-overlay');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'blood-overlay';
+            el.style.cssText = 'position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:9996;';
+            document.body.appendChild(el);
+        }
+        if (!config.effects.blood.on) { el.style.display = 'none'; return; }
+        el.style.display = 'block';
+        const c = config.effects.blood.color;
+        const count = 14;
+        const drips = Array.from({length:count}, (_,i) => {
+            const x = (i / (count-1) * 96 + 2 + (Math.random()-.5)*3).toFixed(1);
+            const h = (35 + Math.random()*90).toFixed(1);
+            const w = (6 + Math.random()*10).toFixed(1);
+            const op = (.65 + Math.random()*.35).toFixed(2);
+            return `<ellipse cx="${x}%" cy="0" rx="${w/2}%" ry="${w/3}%" fill="${c}" opacity="${op}"/>` +
+                   `<path d="M${(+x-(+w/2)/2).toFixed(1)}% 0 Q${x}% ${+h*.3}% ${x}% ${h}% Q${(+x+(+w/2)/2).toFixed(1)}% ${+h*.5}% ${(+x+0.3).toFixed(1)}% 0" fill="${c}" opacity="${op}"/>`;
+        }).join('');
+        el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200" preserveAspectRatio="none" style="width:100%;height:180px;display:block;">${drips}</svg>`;
+    };
+
+    const applyEffects = () => {
+        const needCanvas = ['rain','dust','glitter','fireflies'].some(k => config.effects[k].on);
+        if (needCanvas) {
+            if (!fxCanvas) setupCanvas();
+            if (!window._bliishFxId) fxLoop();
+        } else if (window._bliishFxId) {
+            cancelAnimationFrame(window._bliishFxId);
+            window._bliishFxId = null;
+            if (fxCanvas) { fxCtx.clearRect(0,0,fxCanvas.width,fxCanvas.height); }
+        }
+        setupBlood();
+    };
+
+    // ─── PROFILE APPLICATION ─────────────────────────────────────────────────────
+    const applyProfile = () => {
+        applySymbolTheme();
+        interceptLikes();
+    };
+
+    const interceptLikes = () => {
+        const likedPosts = getObj('likedPosts', {});
+        document.querySelectorAll('.lite-post-foot a, .lite-foot-item a').forEach(link => {
+            if (link.dataset.liInt || !link.href.includes('like')) return;
+            link.dataset.liInt = '1';
+            const postId = link.href.match(/\/(?:post|wall|p)s?\/([^/]+)\/like/i)?.[1] ||
+                           link.href.match(/[?&](?:post|p)=([^&]+)/)?.[1];
+            if (!postId) return;
+            if (likedPosts[postId]) { link.style.fontWeight = '900'; link.style.opacity = '1'; }
+            link.addEventListener('click', e => {
+                e.preventDefault();
+                likedPosts[postId] = !likedPosts[postId];
+                setObj('likedPosts', likedPosts);
+                link.style.fontWeight = likedPosts[postId] ? '900' : '';
+                GM_xmlhttpRequest({ method:'GET', url:link.href, headers:{ 'Referer':window.location.href }, onload:()=>{} });
+            });
+        });
+    };
+
+    // ─── TAB STATE ──────────────────────────────────────────────────────────────
+    let currentTab = 'design';
+    let symShowAll = false;
+
+    // ─── RENDER ─────────────────────────────────────────────────────────────────
+    const renderDesignTab = (cur, isCustomFont, bgDisp) => `
+        <label class="ui-label">${cur.font}</label>
+        <select id="font-select" class="ui-input" style="margin-bottom:8px;">
+            ${fontList.map(f=>`<option value="${f}" ${(!isCustomFont&&config.font===f)?'selected':''}>${f}</option>`).join('')}
+            <option value="__custom__" ${isCustomFont?'selected':''}>✏️ ${cur.customFont.split('(')[0].trim()}</option>
+        </select>
+        <div id="custom-font-wrap" style="display:${isCustomFont?'block':'none'};margin-bottom:10px;">
+            <input type="text" id="custom-font-input" class="ui-input" placeholder="${cur.customFontPlaceholder}" value="${config.customFont||''}">
+            <div style="margin-top:4px;font-size:10px;color:#888 !important;">${cur.findFont} <a href="https://fonts.google.com" target="_blank" style="color:#0077ff !important;text-decoration:underline;">Google Fonts</a></div>
+        </div>
+
+        <label class="ui-label">${cur.bg}</label>
+        <input type="text" id="bg-input" class="ui-input" value="${bgDisp}" style="margin-bottom:6px;">
+        <div class="ui-row">
+            <button id="bg-browse-btn" class="ui-btn ui-col">${cur.browse}</button>
+            <button id="bg-reset-btn" class="ui-btn ui-col ui-btn-danger">${cur.resetBg}</button>
+        </div>
+        <input type="file" id="bg-file" accept="image/*" style="display:none">
+        <div class="ui-row" style="margin-top:10px;">
+            <div class="ui-col">
+                <label class="ui-label">${cur.bgColor}</label>
+                <input type="color" id="bg-color-picker" value="${config.bgColor}" style="width:100%;height:34px;border:none;cursor:pointer;background:none;">
+            </div>
+            <div class="ui-col" id="gradient-col" style="display:${config.useGradient?'block':'none'};">
+                <label class="ui-label">${cur.gradient}</label>
+                <input type="color" id="bg-gradient-picker" value="${config.bgGradient}" style="width:100%;height:34px;border:none;cursor:pointer;background:none;">
+            </div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;cursor:pointer;font-weight:700;">
+            <input type="checkbox" id="gradient-toggle" ${config.useGradient?'checked':''} style="width:16px;height:16px;"> ${cur.useGradient}
+        </label>
+        <div class="ui-row">
+            <div class="ui-col"><label class="ui-label">${cur.opacity}</label><input type="range" id="opacity-input" min="0" max="1" step="0.05" value="${config.bgOpacity}" style="width:100%;"></div>
+            <div class="ui-col"><label class="ui-label">${cur.radius}</label><input type="range" id="radius-input" min="0" max="40" value="${config.radius}" style="width:100%;"></div>
+        </div>
+        <div class="ui-row">
+            <div class="ui-col"><label class="ui-label">${cur.text}</label><input type="color" id="color-picker" value="${config.textColor}" style="width:100%;height:34px;border:none;background:none;"></div>
+            <div class="ui-col"><label class="ui-label">${cur.accent}</label><input type="color" id="accent-picker" value="${config.accentColor}" style="width:100%;height:34px;border:none;background:none;"></div>
+        </div>
+        <label class="ui-label">${cur.music}</label>
+        <input type="text" id="music-input" class="ui-input" value="${config.music&&config.music.startsWith('data')?cur.localMusic:config.music}" style="margin-bottom:6px;">
+        <div class="ui-row">
+            <button id="music-browse-btn" class="ui-btn ui-col">${cur.browse}</button>
+            <button id="music-remove-btn" class="ui-btn ui-col ui-btn-danger">${cur.removeMusic}</button>
+        </div>
+        <input type="file" id="music-file" accept="audio/*" style="display:none">
+        <label class="ui-label" style="margin-top:10px;">${cur.vol}</label>
+        <input type="range" id="volume-input" min="0" max="100" value="${config.volume*100}" style="width:100%;margin-bottom:10px;">
+        <div style="font-size:12px;border-top:1px solid rgba(128,128,128,.2);padding-top:8px;">
+            <strong>${cur.musicStatus}</strong> <span id="music-status-text">—</span>
+        </div>`;
+
+    const renderEffectsTab = (cur) => {
+        const defs = [
+            { key:'blood',     label:cur.fxBlood,     slider:'speed',     max:3 },
+            { key:'glitter',   label:cur.fxGlitter,   slider:'intensity', max:1 },
+            { key:'rain',      label:cur.fxRain,       slider:'speed',     max:3 },
+            { key:'dust',      label:cur.fxDust,       slider:'intensity', max:1 },
+            { key:'fireflies', label:cur.fxFireflies, slider:'speed',     max:2 },
+        ];
+        return `<p style="font-size:11px;color:#888 !important;margin:0 0 12px;">Toggle effects, pick colors, adjust intensity/speed.</p>` +
+            defs.map(({key,label,slider,max}) => {
+                const e = config.effects[key];
+                return `<div class="fx-row">
+                    <button class="fx-toggle ${e.on?'on':'off'}" data-fx="${key}" title="Toggle"></button>
+                    <span class="fx-name">${label}</span>
+                    <div class="fx-controls">
+                        <input type="color" class="fx-color" data-fx="${key}" value="${e.color}" title="${cur.fxColor}">
+                        <input type="range" class="fx-slider" data-fx="${key}" data-slider="${slider}" min="0" max="${max}" step="0.1" value="${e[slider]??0.5}" title="${slider==='intensity'?cur.fxIntensity:cur.fxSpeed}">
+                    </div>
+                </div>`;
+            }).join('');
+    };
+
+    const renderSymbolTab = (cur) => {
+        const allThemes = [
+            ...Object.entries(SYMBOL_THEMES).map(([k, v]) => ({
+                id: k,
+                label: v.labels?.[userLang] || v.labels?.en || k
+            })),
+            ...customSymThemes.map(t => ({
+                id: t.id,
+                label: '✏️ ' + t.name
+            })),
+            {
+                id: '__custom__',
+                label: cur.symCustomLabel
+            },
+        ];
+
+        const visibleSymbols = symShowAll ? ORIGINAL_SYMBOLS : ORIGINAL_SYMBOLS.slice(0, 5);
+        const editorMap = config.symbolTheme === '__custom__'
+            ? (config.customSymMap || {})
+            : (getActiveSymbolMap() || {});
+
+        return `
+        <label class="ui-label">${cur.symbolTheme}</label>
+        <div id="sym-theme-scroller">
+            ${allThemes.map(t => `
+                <button class="sym-theme-chip ${config.symbolTheme === t.id ? 'active' : ''}" data-symtheme="${t.id}">
+                    ${t.label}
+                </button>
+            `).join('')}
+        </div>
+        <hr class="sym-divider">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:inherit;">${cur.symCustomLabel}</span>
+            <label style="display:flex;align-items:center;gap:5px;font-size:11px;cursor:pointer;font-weight:700;">
+                <input type="checkbox" id="sym-show-all" ${symShowAll ? 'checked' : ''} style="width:13px;height:13px;">
+                ${cur.symShowAll}
+            </label>
+        </div>
+        <div id="sym-rows">
+            ${visibleSymbols.map(sym => `
+                <div class="sym-row">
+                    <span class="sym-orig">${sym.original}</span>
+                    <span class="sym-label">${sym.labels?.[userLang] || sym.labels?.en || sym.original}</span>
+                    <input type="text" class="sym-input" data-symkey="${sym.original}" placeholder="${sym.original}" value="${editorMap[sym.original] || ''}" maxlength="8">
+                </div>
+            `).join('')}
+        </div>
+        <div style="font-size:10px;margin:6px 0 10px;">
+            ${cur.symHint}
+            <a href="https://emojidb.org/" target="_blank" style="color:#0077ff !important;text-decoration:underline;">emojidb.org</a>
+        </div>
+        <hr class="sym-divider">
+        <label class="ui-label">${cur.symCustomName}</label>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+            <input type="text" id="sym-custom-name" class="ui-input" placeholder="${cur.symCustomNamePh}" style="flex:1;" value="${(() => { const found = customSymThemes.find(t => t.id === config.symbolTheme); return found ? found.name : ''; })()}">
+            <button id="sym-save-btn" class="ui-btn" style="font-weight:800;white-space:nowrap;">${cur.symCustomSave}</button>
+        </div>
+        <div id="sym-save-feedback">${cur.symCustomSaved}</div>
+    `;
+    };
+
+    const renderProfileTab = (cur) => {
+        const prof = config.profile;
+        const frames = ['none','round','square','roundedSq','heart','sun','cat'];
+        const fLabels = [cur.profFrameNone, cur.profFrameRound, cur.profFrameSquare, cur.profFrameRoundedSq, cur.profFrameHeart, cur.profFrameSun, cur.profFrameCat];
+        const positions = ['left','center','right'];
+        const pLabels = [cur.profPosLeft, cur.profPosCenter, cur.profPosRight];
+
+        return `
+            <div class="prof-note">${cur.profNote}</div>
+
+            <!-- Frame shape -->
+            <label class="ui-label">${cur.profFrame}</label>
+            <div class="chip-row">
+                ${frames.map((f,i)=>`<button class="chip ${prof.frame===f?'active':''}" data-frame="${f}">${fLabels[i]}</button>`).join('')}
+            </div>
+
+            <!-- Glow -->
+            <label class="ui-label">${cur.profGlow}</label>
+            <div class="chip-row" style="margin-bottom:6px;">
+                <button class="chip ${!prof.glow?'active':''}" data-glow="false">${cur.profGlowNone}</button>
+                <button class="chip ${prof.glow?'active':''}" data-glow="true">${cur.profGlowOn}</button>
+            </div>
+
+            <hr class="prof-divider">
+
+            <!-- Avatar position -->
+            <label class="ui-label">${cur.profAvatarPos}</label>
+            <div class="chip-row">
+                ${positions.map((p,i)=>`<button class="chip ${prof.pos===p?'active':''}" data-pos="${p}">${pLabels[i]}</button>`).join('')}
+            </div>
+
+
+        `;
+    };
+
     const renderMenuContent = (langCode) => {
         const cur = i18n[langCode];
         const isCustomFont = !!config.customFont;
-        const bgDisplayValue = config.bgOriginalUrl || (config.bg.startsWith('data') ? cur.file : config.bg);
+        const bgDisp = config.bgOriginalUrl || (config.bg&&config.bg.startsWith('data') ? cur.file : config.bg) || '';
+        const ac = config.accentColor;
 
         menu.innerHTML = `
             <div id="menu-header">
-                <span style="font-weight:bold;font-size:16px;">${cur.title}</span>
+                <span style="font-weight:900;font-size:15px;letter-spacing:.3px;">${cur.title} ✦</span>
                 <div style="display:flex;gap:6px;align-items:center;">
-                    <button id="theme-toggle-btn">${config.menuDark ? '☀️' : '🌙'}</button>
+                    <button id="theme-toggle-btn">${config.menuDark?'☀︎':'⏾'}</button>
                     <select id="lang-select">
-                        ${Object.keys(i18n).map(k => `<option value="${k}" ${langCode === k ? 'selected' : ''}>${i18n[k].flag} ${k.toUpperCase()}</option>`).join('')}
+                        ${Object.keys(i18n).map(k=>`<option value="${k}" ${langCode===k?'selected':''}>${i18n[k].flag} ${k.toUpperCase()}</option>`).join('')}
                     </select>
                 </div>
             </div>
-            <div id="menu-scroll-body">
-                <label class="ui-label">${cur.font}</label>
-                <select id="font-select" class="ui-input" style="margin-bottom:8px;">
-                    ${fontList.map(f => `<option value="${f}" ${(!isCustomFont && config.font === f) ? 'selected' : ''}>${f}</option>`).join('')}
-                    <option value="__custom__" ${isCustomFont ? 'selected' : ''}>✏️ ${cur.customFont.split('(')[0].trim()}</option>
-                </select>
-                <div id="custom-font-wrap" style="display:${isCustomFont ? 'block' : 'none'};margin-top:6px;">
-                    <input type="text" id="custom-font-input" class="ui-input" placeholder="${cur.customFontPlaceholder}" value="${config.customFont || ''}">
-                    <div style="margin-top:4px;font-size:10px;color:#888 !important;line-height:1.2;">
-                        ${cur.findFont} <a href="https://fonts.google.com" target="_blank" style="color:#0077ff !important;text-decoration:underline;">Google Fonts</a>
-                    </div>
-                </div>
-
-                <label class="ui-label">${cur.bg}</label>
-                <input type="text" id="bg-input" class="ui-input" value="${bgDisplayValue}">
-                <div class="ui-row" style="margin-top:6px;">
-                    <button id="bg-browse-btn" class="ui-btn ui-col">${cur.browse}</button>
-                    <button id="bg-reset-btn" class="ui-btn ui-col" style="color:#e74c3c !important;border-color:#fadbd8 !important;">${cur.resetBg}</button>
-                </div>
-                <input type="file" id="bg-file" accept="image/*" style="display:none">
-
-                <div class="ui-row" style="margin-top:10px;">
-                    <div class="ui-col">
-                        <label class="ui-label">${cur.bgColor}</label>
-                        <input type="color" id="bg-color-picker" value="${config.bgColor}" style="width:100%;height:34px;border:none;cursor:pointer;background:none;">
-                    </div>
-                    <div class="ui-col" id="gradient-col" style="display:${config.useGradient ? 'block' : 'none'};">
-                        <label class="ui-label">${cur.gradient}</label>
-                        <input type="color" id="bg-gradient-picker" value="${config.bgGradient}" style="width:100%;height:34px;border:none;cursor:pointer;background:none;">
-                    </div>
-                </div>
-
-                <label style="display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px;cursor:pointer;font-weight:600;">
-                    <input type="checkbox" id="gradient-toggle" ${config.useGradient ? 'checked' : ''} style="width:16px;height:16px;"> ${cur.useGradient}
-                </label>
-
-                <div class="ui-row">
-                    <div class="ui-col">
-                        <label class="ui-label">${cur.opacity}</label>
-                        <input type="range" id="opacity-input" min="0" max="1" step="0.05" value="${config.bgOpacity}" style="width:100%;">
-                    </div>
-                    <div class="ui-col">
-                        <label class="ui-label">${cur.radius}</label>
-                        <input type="range" id="radius-input" min="0" max="40" value="${config.radius}" style="width:100%;">
-                    </div>
-                </div>
-
-                <div class="ui-row">
-                    <div class="ui-col">
-                        <label class="ui-label">${cur.text}</label>
-                        <input type="color" id="color-picker" value="${config.textColor}" style="width:100%;height:34px;border:none;background:none;">
-                    </div>
-                    <div class="ui-col">
-                        <label class="ui-label">${cur.accent}</label>
-                        <input type="color" id="accent-picker" value="${config.accentColor}" style="width:100%;height:34px;border:none;background:none;">
-                    </div>
-                </div>
-
-                <label class="ui-label">${cur.music}</label>
-                <input type="text" id="music-input" class="ui-input" value="${config.music.startsWith('data') ? cur.localMusic : config.music}">
-                <button id="music-browse-btn" class="ui-btn" style="width:100%;margin-top:6px;">${cur.browse}</button>
-                <input type="file" id="music-file" accept="audio/*" style="display:none">
-
-                <label class="ui-label" style="margin-top:12px;">${cur.vol}</label>
-                <input type="range" id="volume-input" min="0" max="100" value="${config.volume * 100}" style="width:100%;">
-
-                <div style="margin-top:12px;font-size:12px;border-top:1px solid #eee;padding-top:8px;">
-                    <strong>${cur.musicStatus}</strong> <span id="music-status-text">—</span>
-                </div>
+            <div id="tab-bar">
+                <button class="tab-btn ${currentTab==='design'?'active':''}" data-tab="design">${cur.tabDesign}</button>
+                <button class="tab-btn ${currentTab==='effects'?'active':''}" data-tab="effects">${cur.tabEffects}</button>
+                <button class="tab-btn ${currentTab==='symbols'?'active':''}" data-tab="symbols">🔣 ${userLang==='uk'?'Символи':'Symbols'}</button>
+                <button class="tab-btn ${currentTab==='profile'?'active':''}" data-tab="profile">${cur.tabProfile}</button>
             </div>
+            <div id="menu-scroll-body">
+                ${currentTab==='design'  ? renderDesignTab(cur, isCustomFont, bgDisp) : ''}
+                ${currentTab==='effects' ? renderEffectsTab(cur) : ''}
+                ${currentTab==='symbols' ? renderSymbolTab(cur) : ''}
+                ${currentTab==='profile' ? renderProfileTab(cur) : ''}
+            </div>
+            ${currentTab === 'design' ? `
             <div id="menu-footer">
-                <div class="ui-row" style="margin-bottom:10px;">
+                <div class="ui-row" style="margin-bottom:8px;">
                     <button id="export-btn" class="ui-btn ui-col">${cur.exportTheme}</button>
                     <button id="import-btn" class="ui-btn ui-col">${cur.importTheme}</button>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <button id="save-btn">SAVE & APPLY</button>
+                <div style="display:flex;gap:6px;">
+                    <button id="save-btn" style="flex:1;">SAVE & APPLY</button>
                     <button id="stop-btn">⏯</button>
                 </div>
                 <input type="file" id="import-file" accept=".json" style="display:none">
             </div>
-        `;
+            ` : ''}`;
 
         attachEvents(langCode);
         updateMusicStatus();
     };
 
-    // --- EVENTS ---
+    // ─── EVENTS ─────────────────────────────────────────────────────────────────
     const attachEvents = (langCode) => {
         const cur = i18n[langCode];
 
-        // Simple oninput → config key bindings
-        [
-            ['bg-color-picker',    'bgColor'],
-            ['bg-gradient-picker', 'bgGradient'],
-            ['opacity-input',      'bgOpacity'],
-            ['radius-input',       'radius'],
-            ['color-picker',       'textColor'],
-            ['accent-picker',      'accentColor'],
-            ['custom-font-input',  'customFont'],
-        ].forEach(([id, key]) => {
-            $(id).oninput = e => { config[key] = e.target.value; applyStyles(); };
+        menu.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => { currentTab = btn.dataset.tab; renderMenuContent(langCode); };
         });
 
-        $('lang-select').onchange = e => {
-            userLang = e.target.value;
-            GM_setValue('lang', userLang);
-            renderMenuContent(userLang);
-        };
+        $('lang-select')?.addEventListener('change', e => { userLang = e.target.value; GM_setValue('lang', userLang); renderMenuContent(userLang); });
+        $('theme-toggle-btn')?.addEventListener('click', () => { config.menuDark = !config.menuDark; applyStyles(); renderMenuContent(langCode); });
 
-        $('theme-toggle-btn').onclick = () => {
-            config.menuDark = !config.menuDark;
-            applyStyles();
-            renderMenuContent(userLang);
-        };
+        // ── Design tab ──────────────────────────────────────
+        if (currentTab === 'design') {
+            [['bg-color-picker','bgColor'],['bg-gradient-picker','bgGradient'],['opacity-input','bgOpacity'],
+             ['radius-input','radius'],['color-picker','textColor'],['accent-picker','accentColor'],
+             ['custom-font-input','customFont']].forEach(([id,key]) => {
+                $(id)?.addEventListener('input', e => { config[key] = e.target.value; applyStyles(); });
+            });
+            $('gradient-toggle')?.addEventListener('change', e => {
+                config.useGradient = e.target.checked;
+                $('gradient-col').style.display = e.target.checked ? 'block' : 'none';
+                applyStyles();
+            });
+            $('font-select')?.addEventListener('change', e => {
+                const val = e.target.value;
+                $('custom-font-wrap').style.display = val === '__custom__' ? 'block' : 'none';
+                if (val !== '__custom__') { config.customFont = ''; config.font = val; applyStyles(); }
+            });
+            $('bg-input')?.addEventListener('input', e => {
+                const url = e.target.value.trim();
+                if (!url) { config.bg = ''; config.bgOriginalUrl = ''; applyStyles(); return; }
+                config.bgOriginalUrl = url;
+                fetchImageAsBase64(url, b64 => { config.bg = b64; applyStyles(); }, () => { config.bg = url; applyStyles(); });
+            });
+            $('bg-reset-btn')?.addEventListener('click', () => { config.bg = ''; config.bgOriginalUrl = ''; $('bg-input').value = ''; applyStyles(); });
+            $('bg-browse-btn')?.addEventListener('click', () => $('bg-file').click());
+            $('bg-file')?.addEventListener('change', e => {
+                const fr = new FileReader();
+                fr.onload = ev => { config.bg = ev.target.result; config.bgOriginalUrl = ''; $('bg-input').value = cur.file; applyStyles(); };
+                fr.readAsDataURL(e.target.files[0]);
+            });
+            $('music-browse-btn')?.addEventListener('click', () => $('music-file').click());
+            $('music-file')?.addEventListener('change', e => {
+                const fr = new FileReader();
+                fr.onload = ev => {
+                    config.music = ev.target.result;
+                    $('music-input').value = cur.localMusic;
+                    if (window.audioPl) { window.audioPl.src = ev.target.result; window.audioPl.play().catch(()=>{}); }
+                    else { window.audioPl = Object.assign(new Audio(ev.target.result), { loop:true, volume:config.volume }); window.audioPl.play().catch(()=>{}); }
+                    updateMusicStatus();
+                };
+                fr.readAsDataURL(e.target.files[0]);
+            });
+            $('music-remove-btn')?.addEventListener('click', () => {
+                config.music = '';
+                if (window.audioPl) { window.audioPl.pause(); window.audioPl.src = ''; window.audioPl = null; }
+                $('music-input').value = '';
+                updateMusicStatus();
+            });
+            $('volume-input')?.addEventListener('input', e => {
+                config.volume = e.target.value / 100;
+                if (window.audioPl) window.audioPl.volume = config.volume;
+            });
+            $('stop-btn')?.addEventListener('click', () => {
+                if (!window.audioPl) return;
+                window.audioPl.paused ? window.audioPl.play().catch(()=>{}) : window.audioPl.pause();
+                setTimeout(updateMusicStatus, 100);
+            });
+            $('export-btn')?.addEventListener('click', () => {
+                const exportData = { ...config };
+                delete exportData.profile;
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([JSON.stringify(exportData, null, 2)], { type:'application/json' }));
+                a.download = 'bliish-theme.json'; a.click();
+            });
+            $('import-btn')?.addEventListener('click', () => $('import-file').click());
+            $('import-file')?.addEventListener('change', e => {
+                const fr = new FileReader();
+                fr.onload = ev => { try { Object.assign(config, JSON.parse(ev.target.result)); saveConfig(); location.reload(); } catch { alert('Import error'); } };
+                fr.readAsText(e.target.files[0]);
+            });
+            $('save-btn')?.addEventListener('click', () => {
+                const mv = $('music-input').value;
+                if (!mv.includes('🎵')) config.music = mv;
+                saveConfig(); location.reload();
+            });
+        }
 
-        $('gradient-toggle').onchange = e => {
-            config.useGradient = e.target.checked;
-            $('gradient-col').style.display = config.useGradient ? 'block' : 'none';
-            applyStyles();
-        };
+        // ── Effects tab ─────────────────────────────────────
+        if (currentTab === 'effects') {
+            menu.querySelectorAll('.fx-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.dataset.fx;
+                    config.effects[key].on = !config.effects[key].on;
+                    btn.className = `fx-toggle ${config.effects[key].on ? 'on' : 'off'}`;
+                    setObj('effects', config.effects);
+                    applyEffects();
+                });
+            });
+            menu.querySelectorAll('.fx-color').forEach(inp => {
+                inp.addEventListener('input', e => {
+                    config.effects[e.target.dataset.fx].color = e.target.value;
+                    setObj('effects', config.effects); applyEffects();
+                });
+            });
+            menu.querySelectorAll('.fx-slider').forEach(inp => {
+                inp.addEventListener('input', e => {
+                    config.effects[e.target.dataset.fx][e.target.dataset.slider] = Number(e.target.value);
+                    setObj('effects', config.effects); applyEffects();
+                });
+            });
+        }
 
-        $('font-select').onchange = e => {
-            const val = e.target.value;
-            $('custom-font-wrap').style.display = val === '__custom__' ? 'block' : 'none';
-            if (val !== '__custom__') { config.customFont = ''; config.font = val; applyStyles(); }
-        };
+        // ── Symbols tab ──────────────────────────────────────
+        if (currentTab === 'symbols') {
+            menu.querySelectorAll('.sym-theme-chip').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.symtheme;
+                    config.symbolTheme = id;
+                    GM_setValue('symbolTheme', id);
+                    if (id !== '__custom__') {
+                        const found = customSymThemes.find(t => t.id === id);
+                        const map = found ? found.map : ((SYMBOL_THEMES[id] || SYMBOL_THEMES.none).map);
+                        config.customSymMap = { ...map };
+                        setObj('customSymMap', config.customSymMap);
+                    }
+                    applySymbolTheme();
+                    renderMenuContent(langCode);
+                });
+            });
 
-        $('bg-input').oninput = e => {
-            const url = e.target.value.trim();
-            if (!url) { config.bg = ''; config.bgOriginalUrl = ''; applyStyles(); return; }
-            config.bgOriginalUrl = url;
-            fetchImageAsBase64(url,
-                base64 => { config.bg = base64; applyStyles(); },
-                ()     => { config.bg = url;    applyStyles(); }
-            );
-        };
+            $('sym-show-all')?.addEventListener('change', e => {
+                symShowAll = e.target.checked;
+                renderMenuContent(langCode);
+            });
 
-        $('bg-reset-btn').onclick = () => {
-            config.bg = ''; config.bgOriginalUrl = '';
-            $('bg-input').value = '';
-            applyStyles();
-        };
+            menu.querySelectorAll('.sym-input').forEach(inp => {
+                inp.addEventListener('input', e => {
+                    const orig = e.target.dataset.symkey;
+                    const val = e.target.value.trim();
+                    if (!config.customSymMap) config.customSymMap = {};
+                    if (val) { config.customSymMap[orig] = val; } else { delete config.customSymMap[orig]; }
+                    config.symbolTheme = '__custom__';
+                    GM_setValue('symbolTheme', '__custom__');
+                    setObj('customSymMap', config.customSymMap);
+                    applySymbolTheme();
+                    menu.querySelectorAll('.sym-theme-chip').forEach(c => {
+                        c.classList.toggle('active', c.dataset.symtheme === '__custom__');
+                    });
+                });
+            });
 
-        $('bg-browse-btn').onclick = () => $('bg-file').click();
-        $('bg-file').onchange = e => {
-            const reader = new FileReader();
-            reader.onload = ev => {
-                config.bg = ev.target.result;
-                config.bgOriginalUrl = '';
-                $('bg-input').value = cur.file;
+            $('sym-save-btn')?.addEventListener('click', () => {
+                const nameInput = $('sym-custom-name');
+                const name = nameInput?.value.trim() || ('Custom ' + (customSymThemes.length + 1));
+                const existingIdx = customSymThemes.findIndex(t => t.name === name);
+                const id = existingIdx >= 0 ? customSymThemes[existingIdx].id : ('cst_' + Date.now());
+                const entry = { id, name, map: { ...config.customSymMap } };
+                if (existingIdx >= 0) { customSymThemes[existingIdx] = entry; } else { customSymThemes.push(entry); }
+                config.symbolTheme = id;
+                GM_setValue('symbolTheme', id);
+                setObj('customSymThemes', customSymThemes);
+                setObj('customSymMap', config.customSymMap);
+                const fb = $('sym-save-feedback');
+                if (fb) { fb.style.display = 'block'; setTimeout(() => { fb.style.display = 'none'; }, 2000); }
+                applySymbolTheme();
+                setTimeout(() => renderMenuContent(langCode), 500);
+            });
+        }
+
+        // ── Profile tab ──────────────────────────────────────
+        if (currentTab === 'profile') {
+            const saveProf = () => {
+                setObj('profile', config.profile);
                 applyStyles();
             };
-            reader.readAsDataURL(e.target.files[0]);
-        };
 
-        $('music-browse-btn').onclick = () => $('music-file').click();
-        $('music-file').onchange = e => {
-            const reader = new FileReader();
-            reader.onload = ev => { config.music = ev.target.result; $('music-input').value = cur.localMusic; };
-            reader.readAsDataURL(e.target.files[0]);
-        };
+            menu.querySelectorAll('.chip[data-frame]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    config.profile.frame = btn.dataset.frame;
+                    menu.querySelectorAll('.chip[data-frame]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    saveProf();
+                });
+            });
 
-        $('volume-input').oninput = e => {
-            config.volume = e.target.value / 100;
-            if (window.audioPl) window.audioPl.volume = config.volume;
-        };
+            menu.querySelectorAll('.chip[data-glow]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    config.profile.glow = btn.dataset.glow === 'true';
+                    menu.querySelectorAll('.chip[data-glow]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    saveProf();
+                });
+            });
 
-        $('stop-btn').onclick = () => {
-            if (!window.audioPl) return;
-            window.audioPl.paused ? window.audioPl.play().catch(() => {}) : window.audioPl.pause();
-            setTimeout(updateMusicStatus, 100);
-        };
+            menu.querySelectorAll('.chip[data-pos]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    config.profile.pos = btn.dataset.pos;
+                    menu.querySelectorAll('.chip[data-pos]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    saveProf();
+                });
+            });
 
-        $('export-btn').onclick = () => {
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' }));
-            a.download = 'bliish-theme.json';
-            a.click();
-        };
 
-        $('import-btn').onclick = () => $('import-file').click();
-        $('import-file').onchange = e => {
-            const reader = new FileReader();
-            reader.onload = ev => {
-                try { Object.assign(config, JSON.parse(ev.target.result)); saveConfig(); location.reload(); }
-                catch { alert('Import error'); }
-            };
-            reader.readAsText(e.target.files[0]);
-        };
-
-        $('save-btn').onclick = () => {
-            const musicVal = $('music-input').value;
-            if (!musicVal.includes('🎵')) config.music = musicVal;
-            saveConfig();
-            location.reload();
-        };
+        }
     };
 
-    // --- INIT ---
-    const menu = Object.assign(document.createElement('div'), { id: 'design-menu-box' });
+    // ─── INIT ────────────────────────────────────────────────────────────────────
+    const menu = Object.assign(document.createElement('div'), { id:'design-menu-box' });
     menu.style.display = 'none';
     document.body.appendChild(menu);
 
     document.body.appendChild(Object.assign(document.createElement('button'), {
-        id: 'toggle-btn', innerHTML: '🎨',
-        onclick: () => menu.style.display = menu.style.display === 'none' ? 'flex' : 'none'
+        id:'toggle-btn', innerHTML:'👩🏻‍🎨',
+        onclick: () => menu.style.display = menu.style.display === 'none' ? 'flex' : 'none',
     }));
 
+    injectSvgClips();
     renderMenuContent(userLang);
     applyStyles();
+    applyEffects();
+
+    requestAnimationFrame(() => {
+        applyProfile();
+        applySymbolTheme();
+    });
 
     if (config.music) {
-        window.audioPl = Object.assign(new Audio(config.music), { loop: true, volume: config.volume });
-        document.addEventListener('click', () => { if (window.audioPl.paused) window.audioPl.play().catch(() => {}); }, { once: true });
+        window.audioPl = Object.assign(new Audio(config.music), { loop:true, volume:config.volume });
+        document.addEventListener('click', () => { if (window.audioPl?.paused) window.audioPl.play().catch(()=>{}); }, { once:true });
         setInterval(updateMusicStatus, 1000);
     }
+
 })();
