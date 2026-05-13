@@ -24,3 +24,11 @@ I’d love to hear it, of course! If possible, I’ll add or fix something if th
 Feel free to fork this script and add your own touches. For now, this script has everything I need.
 
 ## Thanks for installing!
+
+----
+
+### Important
+The project has been closed. I will not be continuing to develop it, due to the behavior of the developer Bliish and because I am no longer on the platform. 
+If *you* would like to continue developing the project, feel free to fork the code. 
+
+#### Thank you to everyone who has been involved with the project and who has used or is currently using it.
